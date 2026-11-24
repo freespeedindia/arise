@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { -webkit-tap-highlight-color: transparent; }
+html, body, #root { height: 100%; }
+body {
+  @apply bg-[#FFF8F0] text-ink-900 font-sans antialiased dark:bg-ink-900 dark:text-white;
+  overscroll-behavior-y: none;
+}
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
+.card { @apply rounded-3xl bg-white shadow-[0_6px_24px_-10px_rgba(255,120,0,0.25)] dark:bg-ink-800 dark:shadow-none; }
+.chip { @apply rounded-full px-4 py-2 text-sm font-bold transition-colors; }
+.input { @apply w-full rounded-2xl border-2 border-orange-100 bg-orange-50/50 px-4 py-3 text-base outline-none focus:border-saffron-500 dark:border-ink-700 dark:bg-ink-900; }
+.label { @apply mb-1 block text-xs font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400; }
+.btn-primary { @apply rounded-2xl bg-gradient-to-r from-saffron-500 to-orange-600 px-5 py-3.5 text-base font-extrabold text-white shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-transform; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
