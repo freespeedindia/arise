@@ -1,68 +1,56 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
+import { ListChecks } from 'lucide-react'
 import { db, type Task } from '../lib/db'
 import { isDoneNow, isDueToday, sortTasks } from '../lib/tasks'
-import { todayKey } from '../lib/dates'
 import TaskItem from '../components/TaskItem'
 import TaskForm from '../components/TaskForm'
 import Fab from '../components/Fab'
 
-type Filter = 'today' | 'upcoming' | 'repeating' | 'anytime' | 'done'
+type Filter = 'today' | 'upcoming' | 'habits' | 'anytime' | 'done'
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'today', label: '☀️ Today' },
-  { id: 'upcoming', label: '📅 Upcoming' },
-  { id: 'repeating', label: '🔁 Habits' },
-  { id: 'anytime', label: '📝 Anytime' },
-  { id: 'done', label: '✅ Done' },
+  { id: 'today', label: 'Today' }, { id: 'upcoming', label: 'Upcoming' }, { id: 'habits', label: 'Recurring' },
+  { id: 'anytime', label: 'Someday' }, { id: 'done', label: 'Completed' },
 ]
 
-export default function Tasks() {
+export default function Tasks({ today: t }: { today: string }) {
   const tasks = useLiveQuery(() => db.tasks.toArray()) ?? []
   const [filter, setFilter] = useState<Filter>('today')
   const [editing, setEditing] = useState<Task | null>(null)
   const [formOpen, setFormOpen] = useState(false)
-  const t = todayKey()
 
-  const list = tasks.filter((k) => {
+  const todayList = tasks.filter((k) => isDueToday(k, t) && (k.repeat !== 'none' || !k.doneAt || k.doneAt === t))
+  const list = (filter === 'today' ? todayList : tasks.filter((k) => {
     switch (filter) {
-      case 'today': return isDueToday(k, t) && (k.repeat !== 'none' || !k.doneAt)
-      case 'upcoming': return k.repeat === 'none' && !k.doneAt && !!k.dueDate && k.dueDate > t
-      case 'repeating': return k.repeat !== 'none'
+      case 'upcoming': return !!k.dueDate && k.dueDate > t && (k.repeat !== 'none' || !k.doneAt)
+      case 'habits': return k.repeat !== 'none'
       case 'anytime': return k.repeat === 'none' && !k.doneAt && !k.dueDate
       case 'done': return k.repeat === 'none' && !!k.doneAt
     }
-  }).sort((a, b) => {
+  })).sort((a, b) => {
     if (filter === 'done') return (b.doneAt || '').localeCompare(a.doneAt || '')
-    const d = Number(isDoneNow(a)) - Number(isDoneNow(b))
-    return d || sortTasks(a, b)
+    if (filter === 'upcoming') return (a.dueDate || '').localeCompare(b.dueDate || '')
+    return Number(isDoneNow(a, t)) - Number(isDoneNow(b, t)) || sortTasks(a, b)
   })
-
-  const todayList = tasks.filter((k) => isDueToday(k, t) && (k.repeat !== 'none' || !k.doneAt || k.doneAt === t))
   const doneToday = todayList.filter((k) => isDoneNow(k, t)).length
-
   const open = (task: Task | null) => { setEditing(task); setFormOpen(true) }
 
   return (
     <div className="px-5 safe-top">
-      <div className="mt-4 flex items-end justify-between">
-        <h1 className="font-display text-3xl font-extrabold">Tasks</h1>
-        <p className="font-bold text-gray-500">{doneToday}/{todayList.length} done today</p>
-      </div>
-      <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1">
+      <p className="eyebrow mt-2">{doneToday} of {todayList.length} done today</p>
+      <h1 className="h1 mt-1">Tasks</h1>
+      <div className="no-scrollbar -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-1">
         {FILTERS.map((f) => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
-            className={`chip shrink-0 ${filter === f.id ? 'bg-work-500 text-white shadow-md shadow-blue-500/30' : 'bg-white text-gray-600 dark:bg-ink-800 dark:text-gray-300'}`}>
-            {f.label}
-          </button>
+          <button key={f.id} onClick={() => setFilter(f.id)} className={`chip ${filter === f.id ? 'chip-on' : ''}`}>{f.label}</button>
         ))}
       </div>
-      <div className="mt-4 space-y-3">
-        {list.map((k) => <TaskItem key={k.id} task={k} onEdit={open} />)}
+      <div className="mt-4 space-y-2.5">
+        {list.map((k) => <TaskItem key={k.id} task={k} onEdit={open} today={t} />)}
         {list.length === 0 && (
-          <div className="card px-6 py-10 text-center">
-            <p className="text-5xl">{filter === 'done' ? '🌱' : '🎉'}</p>
-            <p className="mt-3 font-display text-lg font-bold">{filter === 'today' ? 'Nothing left for today' : 'Nothing here yet'}</p>
-            <p className="mt-1 text-sm font-semibold text-gray-500">Tap + to add a task.</p>
+          <div className="card flex flex-col items-center px-6 py-10 text-center">
+            <ListChecks size={28} strokeWidth={1.5} className="text-faint" />
+            <p className="mt-3 font-serif text-lg">{filter === 'today' ? 'Nothing left for today' : 'Nothing here yet'}</p>
+            <p className="mt-1 text-sm text-muted">Tap + to add a task.</p>
           </div>
         )}
       </div>

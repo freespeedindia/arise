@@ -1,13 +1,19 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import BottomNav, { type Tab } from './components/BottomNav'
+import Toast from './components/Toast'
 import { useSettings } from './lib/settings'
+import { useToday } from './lib/useToday'
+import { useSchedule } from './lib/useSchedule'
+import { useNotifier } from './lib/notifier'
 import Today from './screens/Today'
 import Tasks from './screens/Tasks'
 import Goals from './screens/Goals'
-import ComingSoon from './screens/ComingSoon'
+import Health, { type HealthAction } from './screens/Health'
+import Money from './screens/Money'
 import Welcome from './screens/Welcome'
 import SettingsSheet from './screens/SettingsSheet'
+import RemindersSheet from './screens/RemindersSheet'
 
 const TABS: Tab[] = ['today', 'tasks', 'goals', 'health', 'money']
 const readHash = (): Tab => {
@@ -18,7 +24,12 @@ const readHash = (): Tab => {
 export default function App() {
   const settings = useSettings()
   const [tab, setTab] = useState<Tab>(readHash)
+  const [healthAction, setHealthAction] = useState<HealthAction>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [remindersOpen, setRemindersOpen] = useState(false)
+  const today = useToday() // re-draws the screen when the date changes
+  const schedule = useSchedule(today)
+  useNotifier(today, schedule, !!settings?.notifications)
 
   useEffect(() => {
     const onHash = () => setTab(readHash())
@@ -33,7 +44,7 @@ export default function App() {
     const apply = () => {
       const dark = settings.theme === 'dark' || (settings.theme === 'system' && mq.matches)
       document.documentElement.classList.toggle('dark', dark)
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14121F' : '#FF9933')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#16120F' : '#F7F2E9')
     }
     apply()
     mq.addEventListener('change', apply)
@@ -43,7 +54,8 @@ export default function App() {
   if (!settings) return null
   if (!settings.onboarded) return <Welcome />
 
-  const go = (t: Tab) => {
+  const go = (t: Tab, action: HealthAction = null) => {
+    setHealthAction(action)
     window.location.hash = t
     setTab(t)
     window.scrollTo({ top: 0 })
@@ -51,15 +63,17 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-full max-w-lg pb-28">
-      <motion.main key={tab} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-          {tab === 'today' && <Today name={settings.name} onNavigate={go} onOpenSettings={() => setSettingsOpen(true)} />}
-          {tab === 'tasks' && <Tasks />}
-          {tab === 'goals' && <Goals />}
-          {tab === 'health' && <ComingSoon kind="health" />}
-          {tab === 'money' && <ComingSoon kind="money" />}
+      <motion.main key={`${tab}-${today}-${healthAction ?? ''}`} initial={{ y: 6 }} animate={{ y: 0 }} transition={{ duration: 0.18 }}>
+        {tab === 'today' && <Today s={settings} today={today} schedule={schedule ?? []} onNavigate={go} onOpenSettings={() => setSettingsOpen(true)} onOpenReminders={() => setRemindersOpen(true)} />}
+        {tab === 'tasks' && <Tasks today={today} />}
+        {tab === 'goals' && <Goals />}
+        {tab === 'health' && <Health s={settings} today={today} initial={healthAction} />}
+        {tab === 'money' && <Money />}
       </motion.main>
-      <BottomNav tab={tab} onChange={go} />
+      <BottomNav tab={tab} onChange={(t) => go(t)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} />
+      <RemindersSheet open={remindersOpen} onClose={() => setRemindersOpen(false)} s={settings} schedule={schedule ?? []} today={today} />
+      <Toast />
     </div>
   )
 }

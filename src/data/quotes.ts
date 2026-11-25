@@ -126,8 +126,8 @@ export const QUOTES: Quote[] = [
 
 /** Same quote all day, changes at midnight. */
 export function quoteOfTheDay(date = new Date()): { quote: Quote; index: number } {
-  const start = new Date(date.getFullYear(), 0, 0)
-  const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86400000)
-  const index = (dayOfYear * 7 + date.getFullYear()) % QUOTES.length
+  // Count local calendar days (safe across daylight-saving changes and new year)
+  const day = Math.round(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000)
+  const index = (day * 7) % QUOTES.length
   return { quote: QUOTES[index], index }
 }

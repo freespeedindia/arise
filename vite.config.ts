@@ -13,11 +13,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Arise — Life Planner',
+        name: 'Arise',
         short_name: 'Arise',
         description: 'Arise, awake, and stop not till the goal is reached.',
-        theme_color: '#FF9933',
-        background_color: '#FFF8F0',
+        theme_color: '#CF6D1E',
+        background_color: '#F7F2E9',
         display: 'standalone',
         orientation: 'portrait',
         start_url: base,
@@ -30,6 +30,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        importScripts: ['sw-extra.js'],
         // Cache Google Fonts so the app looks the same offline
         runtimeCaching: [{
           urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,

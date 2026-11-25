@@ -2,18 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { -webkit-tap-highlight-color: transparent; }
+/* Arise design tokens — matte saffron, gold, cream, deep red, green */
+:root {
+  --bg: 247 242 233;        /* cream */
+  --surface: 255 252 246;
+  --sunken: 239 232 219;
+  --line: 226 216 199;
+  --ink: 38 30 23;
+  --muted: 113 101 88;
+  --faint: 160 148 133;
+  --saffron: 207 109 30;  --saffron-soft: 246 226 204; --saffron-deep: 168 84 18;
+  --gold: 166 128 52;     --gold-soft: 240 229 203;
+  --crimson: 150 44 40;   --crimson-soft: 243 219 215;
+  --forest: 58 117 78;    --forest-soft: 218 234 221;
+  --water: 52 108 140;    --water-soft: 215 232 240;
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+.dark {
+  --bg: 22 18 15;
+  --surface: 32 27 23;
+  --sunken: 41 35 30;
+  --line: 55 47 40;
+  --ink: 240 232 220;
+  --muted: 172 160 145;
+  --faint: 120 110 98;
+  --saffron: 226 132 54;  --saffron-soft: 64 42 24;  --saffron-deep: 240 160 90;
+  --gold: 205 168 92;     --gold-soft: 58 48 28;
+  --crimson: 214 96 88;   --crimson-soft: 66 30 28;
+  --forest: 110 176 128;  --forest-soft: 30 52 37;
+  --water: 110 168 204;   --water-soft: 26 46 58;
+  color-scheme: dark;
+}
+
 html, body, #root { height: 100%; }
 body {
-  @apply bg-[#FFF8F0] text-ink-900 font-sans antialiased dark:bg-ink-900 dark:text-white;
+  @apply bg-bg text-ink font-sans antialiased;
+  font-feature-settings: 'cv11', 'ss01', 'tnum';
   overscroll-behavior-y: none;
 }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-.safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
-.card { @apply rounded-3xl bg-white shadow-[0_6px_24px_-10px_rgba(255,120,0,0.25)] dark:bg-ink-800 dark:shadow-none; }
-.chip { @apply rounded-full px-4 py-2 text-sm font-bold transition-colors; }
-.input { @apply w-full rounded-2xl border-2 border-orange-100 bg-orange-50/50 px-4 py-3 text-base outline-none focus:border-saffron-500 dark:border-ink-700 dark:bg-ink-900; }
-.label { @apply mb-1 block text-xs font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400; }
-.btn-primary { @apply rounded-2xl bg-gradient-to-r from-saffron-500 to-orange-600 px-5 py-3.5 text-base font-extrabold text-white shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-transform; }
+.safe-top { padding-top: max(env(safe-area-inset-top), 16px); }
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-surface shadow-card; }
+  .eyebrow { @apply text-2xs font-semibold uppercase tracking-[0.12em] text-muted; }
+  .h1 { @apply font-serif text-[30px] font-semibold leading-tight tracking-tight; }
+  .h2 { @apply text-[15px] font-semibold tracking-tight; }
+  .input { @apply w-full rounded-xl border border-line bg-bg px-4 py-3 text-base text-ink outline-none placeholder:text-faint focus:border-saffron; }
+  .label { @apply mb-1.5 block text-2xs font-semibold uppercase tracking-[0.1em] text-muted; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-semibold transition active:scale-[0.98] disabled:opacity-40; }
+  .btn-primary { @apply btn bg-saffron text-white; }
+  .btn-secondary { @apply btn border border-line bg-surface text-ink; }
+  .btn-ghost { @apply btn text-muted; }
+  .seg { @apply grid gap-1 rounded-xl bg-sunken p-1; }
+  .seg-item { @apply rounded-lg py-2 text-sm font-semibold text-muted transition; }
+  .seg-item-on { @apply bg-surface text-ink shadow-card; }
+  .chip { @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-muted transition; }
+  .chip-on { @apply border-ink bg-ink text-bg; }
+  .num { font-variant-numeric: tabular-nums; }
+}
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
