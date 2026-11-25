@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build for the iPhone Simulator
         run: |
+          set -o pipefail
           xcodebuild -version
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
@@ -33,10 +34,10 @@ jobs:
           xcrun simctl install "$DEV" build/Build/Products/Debug-iphonesimulator/App.app
           xcrun simctl launch "$DEV" in.freespeedindia.arise
           mkdir -p shots
-          sleep 12
+          sleep 15
           xcrun simctl io "$DEV" screenshot shots/01-launch.png
-          sleep 8
-          xcrun simctl io "$DEV" screenshot shots/02-after-20s.png
+          sleep 10
+          xcrun simctl io "$DEV" screenshot shots/02-after-25s.png
       - uses: actions/upload-artifact@v4
         with:
           name: iphone-simulator-screenshots
