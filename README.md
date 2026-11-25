@@ -71,7 +71,7 @@ Design: matte saffron, gold, cream, deep red and green; Inter and Source Serif; 
 
 Stack: React + TypeScript + Vite, Tailwind CSS, Framer Motion, Recharts, lucide icons, Dexie (IndexedDB), vite-plugin-pwa. Export uses jsPDF, jspdf-autotable and write-excel-file, loaded only when you export.
 
-Tests: `npm test` (logic incl. 2-year schedules, money, net worth and reports). `tests/e2e-phone.cjs` clicks through the whole app on iPhone and Android screen sizes with Playwright.
+Tests: `npm test` (logic incl. 2-year schedules, money, net worth and reports). `tests/e2e-phone.cjs` clicks through the whole app on iPhone and Android screen sizes with Playwright; `tests/button-audit.cjs` taps every button on every screen and inside every sheet.
 
 ```bash
 npm install

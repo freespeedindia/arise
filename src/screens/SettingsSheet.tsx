@@ -52,7 +52,7 @@ export default function SettingsSheet({ open, onClose, settings }: { open: boole
             </label>
           </div>
         </div>
-        <p className="text-center text-xs text-faint">Arise 0.3 · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device</p>
+        <p className="text-center text-xs text-faint">Arise {__APP_VERSION__} · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device</p>
       </div>
     </Sheet>
   )

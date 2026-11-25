@@ -367,6 +367,7 @@ const T0 = '2026-11-25T07:31:00+05:30' // Wednesday morning, India time
   await tap('[role=dialog] button:has-text("Save backup")')
   const d = await dl
   check('Backup file downloads', d && /arise-backup-2026-11-25\.json/.test(d.suggestedFilename()), d?.suggestedFilename())
+  if (d) await d.saveAs(`${OUT}/${deviceName}-backup.json`)
   await tap('[aria-label="Close"]'); await wait(400)
   await shot('10-today-dark')
   await tap('nav >> text=Health'); await wait(800)

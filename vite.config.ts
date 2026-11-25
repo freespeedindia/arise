@@ -5,12 +5,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 // BASE_PATH is set to "/arise/" when building for GitHub Pages.
 const base = process.env.BASE_PATH || '/'
 
+import pkg from './package.json'
+
 export default defineConfig({
   base,
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false, // registered in src/main.tsx so updates apply right away
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Arise',
@@ -30,6 +34,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        skipWaiting: true, // a new version takes over at once
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         importScripts: ['sw-extra.js'],
         // Cache Google Fonts so the app looks the same offline
         runtimeCaching: [{
