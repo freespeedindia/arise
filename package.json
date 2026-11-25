@@ -1,7 +1,7 @@
 {
   "name": "arise",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,10 +13,13 @@
     "dexie": "^4.4.7",
     "dexie-react-hooks": "^1.1.7",
     "framer-motion": "^11.18.2",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "write-excel-file": "^2.3.10"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",

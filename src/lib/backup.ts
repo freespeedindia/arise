@@ -1,10 +1,10 @@
 import { db } from './db'
 import { todayKey } from './dates'
 
-const TABLES = ['tasks', 'goals', 'settings', 'weights', 'water', 'food', 'activities', 'supplements', 'doses', 'reminders'] as const
+const TABLES = ['tasks', 'goals', 'settings', 'weights', 'water', 'food', 'activities', 'supplements', 'doses', 'reminders', 'transactions', 'holdings', 'liabilities', 'netWorth', 'reviews', 'focus'] as const
 
 export async function exportData() {
-  const out: Record<string, unknown> = { app: 'arise', version: 2, exportedAt: new Date().toISOString() }
+  const out: Record<string, unknown> = { app: 'arise', version: 3, exportedAt: new Date().toISOString() }
   for (const t of TABLES) out[t] = await db.table(t).toArray()
   const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' })
   const a = document.createElement('a')

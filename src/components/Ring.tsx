@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
-export default function Ring({ pct, size = 64, stroke = 6, color = 'rgb(var(--saffron))', children }: {
-  pct: number; size?: number; stroke?: number; color?: string; children?: ReactNode
+export default function Ring({ pct, size = 64, stroke = 6, color = 'rgb(var(--saffron))', track = 'rgb(var(--sunken))', children }: {
+  pct: number; size?: number; stroke?: number; color?: string; track?: string; children?: ReactNode
 }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
@@ -10,7 +10,7 @@ export default function Ring({ pct, size = 64, stroke = 6, color = 'rgb(var(--sa
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} style={{ stroke: 'rgb(var(--sunken))' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} style={{ stroke: track }} />
         <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke}
           strokeLinecap="round" strokeDasharray={c} style={{ stroke: color }}
           initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c - (clamped / 100) * c }}
