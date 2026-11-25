@@ -38,6 +38,9 @@ jobs:
           xcrun simctl io "$DEV" screenshot shots/01-launch.png
           sleep 10
           xcrun simctl io "$DEV" screenshot shots/02-after-25s.png
+          # Small copy printed into the log too, so it can be viewed without downloading
+          sips -s format jpeg -s formatOptions 70 -Z 900 shots/02-after-25s.png --out shots/small.jpg >/dev/null
+          echo "SHOT-BEGIN"; base64 -i shots/small.jpg | tr -d '\n'; echo; echo "SHOT-END"
       - uses: actions/upload-artifact@v4
         with:
           name: iphone-simulator-screenshots
