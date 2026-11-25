@@ -5,14 +5,27 @@ import { db, uid, type Area, type CheckItem, type Goal, type GoalLink } from '..
 import { addDays, todayKey } from '../lib/dates'
 import { AREAS, areaStyle } from '../lib/goals'
 import { syncLinkedGoals } from '../lib/health'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { moneyLinkedValue } from '../lib/money'
 import AreaIcon from './AreaIcon'
 
-const LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
+const HEALTH_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
   { id: '', label: 'Manual' },
   { id: 'weight', label: 'Body weight', unit: 'kg' },
   { id: 'runKm', label: 'Running distance', unit: 'km' },
   { id: 'activeMinutes', label: 'Active minutes', unit: 'min' },
   { id: 'workouts', label: 'Workouts', unit: 'sessions' },
+]
+const WEALTH_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
+  { id: '', label: 'Manual' },
+  { id: 'netWorth', label: 'Net worth', unit: '₹' },
+  { id: 'portfolio', label: 'Total investments', unit: '₹' },
+  { id: 'savings', label: 'Money saved', unit: '₹' },
+  { id: 'holding', label: 'One investment', unit: '₹' },
+]
+const FOCUS_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
+  { id: '', label: 'Manual' },
+  { id: 'focusHours', label: 'Focus hours', unit: 'hours' },
 ]
 
 export default function GoalForm({ open, onClose, goal }: { open: boolean; onClose: () => void; goal?: Goal | null }) {
@@ -23,6 +36,11 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
   const [start, setStart] = useState('')
   const [unit, setUnit] = useState('')
   const [link, setLink] = useState<GoalLink | ''>('')
+  const [linkId, setLinkId] = useState<number | undefined>()
+  const holdings = useLiveQuery(() => db.holdings.toArray()) ?? []
+  const liabilities = useLiveQuery(() => db.liabilities.toArray()) ?? []
+  const LINKS = area === 'Wealth' ? WEALTH_LINKS : area === 'Health' ? HEALTH_LINKS : FOCUS_LINKS
+  const canLink = true
   const [deadline, setDeadline] = useState(addDays(todayKey(), 90))
   const [milestones, setMilestones] = useState<CheckItem[]>([])
   const [newMs, setNewMs] = useState('')
@@ -36,18 +54,27 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
     setStart(goal?.start != null ? String(goal.start) : '')
     setUnit(goal?.unit ?? '')
     setLink(goal?.link ?? '')
+    setLinkId(goal?.linkId)
     setDeadline(goal?.deadline ?? addDays(todayKey(), 90))
     setMilestones(goal?.milestones ?? [])
     setNewMs('')
   }, [open, goal])
 
   const pickTerm = (t: 'short' | 'long') => { setTerm(t); if (!goal) setDeadline(addDays(todayKey(), t === 'short' ? 90 : 365)) }
+  const moneyStart = (l: GoalLink, id?: number) => {
+    // Progress is measured from where you stand today
+    const v = moneyLinkedValue({ link: l, linkId: id, startDate: todayKey() } as Goal, holdings, liabilities, [])
+    setStart(String(Math.round(v ?? 0)))
+  }
   const pickLink = (l: GoalLink | '') => {
     setLink(l)
     const u = LINKS.find((x) => x.id === l)?.unit
     if (u) setUnit(u)
-    if (l && l !== 'weight') setStart('0')
+    if (l === 'netWorth' || l === 'portfolio') moneyStart(l)
+    else if (l === 'holding') { const id = holdings[0]?.id; setLinkId(id); moneyStart(l, id) }
+    else if (l && l !== 'weight') setStart('0')
   }
+  const pickArea = (a: Area) => { setArea(a); if (a !== area) setLink('') }
   const addMs = () => {
     if (!newMs.trim()) return
     setMilestones([...milestones, { id: uid(), text: newMs.trim(), done: false }])
@@ -62,7 +89,8 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
       target: hasTarget ? Number(target) : undefined,
       start: hasTarget ? Number(start || 0) : undefined,
       unit: unit.trim() || undefined,
-      link: (area === 'Health' && link) || undefined,
+      link: (canLink && link && !(link === 'holding' && linkId == null) && link) || undefined,
+      linkId: link === 'holding' ? linkId : undefined,
     }
     if (goal?.id != null) await db.goals.update(goal.id, data)
     else await db.goals.add({ ...data, current: data.start, startDate: todayKey(), focus: false, createdAt: new Date().toISOString() })
@@ -81,7 +109,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
           <span className="label">Area</span>
           <div className="grid grid-cols-4 gap-2">
             {AREAS.map((a) => (
-              <button key={a} onClick={() => setArea(a)}
+              <button key={a} onClick={() => pickArea(a)}
                 className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-sm font-semibold ${area === a ? `${areaStyle[a].border} ${areaStyle[a].soft} ${areaStyle[a].text}` : 'border-line text-muted'}`}>
                 <AreaIcon area={a} size={18} />{a}
               </button>
@@ -96,7 +124,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
             ))}
           </div>
         </div>
-        {area === 'Health' && (
+        {canLink && (
           <div>
             <span className="label">Track progress from</span>
             <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
@@ -104,7 +132,14 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
                 <button key={l.id || 'manual'} onClick={() => pickLink(l.id)} className={`chip ${link === l.id ? 'chip-on' : ''}`}>{l.label}</button>
               ))}
             </div>
-            {link && <p className="mt-1.5 text-xs text-muted">Updates automatically from what you log in Health.</p>}
+            {link === 'holding' && (
+              holdings.length ? (
+                <select className="input mt-2" aria-label="Which investment" value={linkId ?? ''} onChange={(e) => { const id = Number(e.target.value); setLinkId(id); moneyStart('holding', id) }}>
+                  {holdings.map((h) => <option key={h.id} value={h.id}>{h.name} · {h.kind}</option>)}
+                </select>
+              ) : <p className="mt-1.5 text-xs text-crimson">Add an investment in Money first.</p>
+            )}
+            {link && <p className="mt-1.5 text-xs text-muted">Updates automatically from what you log in {area === 'Wealth' ? 'Money' : area === 'Health' ? 'Health' : 'Focus mode'}.{link === 'savings' ? ' Counts income minus expenses from the day the goal starts.' : ''}</p>}
           </div>
         )}
         <div>

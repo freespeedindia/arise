@@ -25,6 +25,16 @@ export interface Settings {
   reviewTime: string
   eveningReviewTime: string
   supplementReminders: boolean
+  // Money (all editable in Money → Setup)
+  currency: string
+  expenseCategories: string[]
+  incomeCategories: string[]
+  assetKinds: string[]
+  monthlyBudget: number // 0 = none
+  budgets: Record<string, number> // per expense category
+  // Focus
+  focusMinutes: number
+  breakMinutes: number
 }
 export const defaultSettings: Settings = {
   name: '', theme: 'system', onboarded: false,
@@ -32,6 +42,14 @@ export const defaultSettings: Settings = {
   notifications: false, wakeStart: '06:00', wakeEnd: '22:00', waterEveryMin: 90,
   runTime: '06:30', runDays: [1, 3, 5], reviewDay: 0, reviewTime: '19:00', eveningReviewTime: '21:30',
   supplementReminders: true,
+  currency: '₹',
+  expenseCategories: ['Food & groceries', 'Rent & home', 'Transport', 'Bills & utilities', 'Health', 'Shopping', 'Education', 'Family', 'Giving', 'Travel', 'Other'],
+  incomeCategories: ['Salary', 'Business', 'Interest & dividends', 'Other'],
+  assetKinds: ['Bank & cash', 'Stocks', 'Mutual funds', 'Fixed deposits', 'PPF / EPF / NPS', 'Gold', 'Real estate', 'Other'],
+  monthlyBudget: 0,
+  budgets: {},
+  focusMinutes: 25,
+  breakMinutes: 5,
 }
 
 export async function readSettings(): Promise<Settings> {

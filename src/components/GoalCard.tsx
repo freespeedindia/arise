@@ -3,12 +3,18 @@ import { Link2, Star } from 'lucide-react'
 import type { Goal } from '../lib/db'
 import { areaStyle, daysLeft, goalPace, goalPercent, paceLabel, paceTone } from '../lib/goals'
 import Ring from './Ring'
+import { money } from '../lib/money'
 import AreaIcon from './AreaIcon'
 
 export function goalValueText(g: Goal): string | null {
   if (g.target == null) return g.milestones.length ? `${g.milestones.filter((m) => m.done).length} of ${g.milestones.length} milestones` : null
-  const now = (g.current ?? g.start ?? 0).toLocaleString()
-  return g.start ? `${now} ${g.unit ?? ''} · ${g.start.toLocaleString()} → ${g.target.toLocaleString()}` : `${now} of ${g.target.toLocaleString()} ${g.unit ?? ''}`
+  if (g.unit === '₹') {
+    const f = (n: number) => money(n, '₹', { compact: true })
+    const now = f(g.current ?? g.start ?? 0)
+    return g.start ? `${now} · ${f(g.start)} → ${f(g.target)}` : `${now} of ${f(g.target)}`
+  }
+  const now = (g.current ?? g.start ?? 0).toLocaleString('en-IN')
+  return g.start ? `${now} ${g.unit ?? ''} · ${g.start.toLocaleString('en-IN')} → ${g.target.toLocaleString('en-IN')}` : `${now} of ${g.target.toLocaleString('en-IN')} ${g.unit ?? ''}`
 }
 
 export default function GoalCard({ goal, onOpen }: { goal: Goal; onOpen: (g: Goal) => void }) {

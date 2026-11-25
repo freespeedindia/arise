@@ -25,7 +25,7 @@ export interface Task {
 }
 
 /** A goal can be fed automatically by data logged elsewhere in the app. */
-export type GoalLink = 'weight' | 'runKm' | 'activeMinutes' | 'workouts'
+export type GoalLink = 'weight' | 'runKm' | 'activeMinutes' | 'workouts' | 'netWorth' | 'portfolio' | 'savings' | 'holding' | 'focusHours'
 
 export interface Goal {
   id?: number
@@ -38,6 +38,8 @@ export interface Goal {
   current?: number
   unit?: string
   link?: GoalLink
+  /** For link 'holding': which investment */
+  linkId?: number
   startDate: string
   deadline: string
   milestones: CheckItem[]
@@ -76,6 +78,33 @@ export interface Reminder {
   createdAt: string
 }
 
+export type TxType = 'expense' | 'income'
+export interface Transaction { id?: number; date: string; type: TxType; amount: number; category: string; note?: string; createdAt: string }
+export interface Holding {
+  id?: number
+  name: string
+  kind: string // Stocks, Mutual funds, FD, Gold, Bank, ... (user editable)
+  invested: number
+  current: number
+  maturity?: string
+  notes?: string
+  updatedAt: string
+}
+export interface Liability { id?: number; name: string; kind: string; outstanding: number; emi?: number; updatedAt: string }
+export interface NetWorthPoint { date: string; assets: number; liabilities: number; net: number }
+export interface Review {
+  id?: number
+  kind: 'daily' | 'weekly' | 'monthly'
+  date: string // the day / week start / month start it covers
+  wins: string
+  improve: string
+  tomorrow: string[] // top priorities (daily creates tasks)
+  energy?: number // 1-5
+  notes?: string
+  createdAt: string
+}
+export interface FocusSession { id?: number; date: string; minutes: number; label?: string; at: string }
+
 class AriseDB extends Dexie {
   tasks!: Table<Task, number>
   goals!: Table<Goal, number>
@@ -87,6 +116,12 @@ class AriseDB extends Dexie {
   supplements!: Table<Supplement, number>
   doses!: Table<DoseLog, number>
   reminders!: Table<Reminder, number>
+  transactions!: Table<Transaction, number>
+  holdings!: Table<Holding, number>
+  liabilities!: Table<Liability, number>
+  netWorth!: Table<NetWorthPoint, string>
+  reviews!: Table<Review, number>
+  focus!: Table<FocusSession, number>
   constructor() {
     super('arise')
     this.version(1).stores({
@@ -102,6 +137,14 @@ class AriseDB extends Dexie {
       supplements: '++id, active',
       doses: '++id, date, suppId, [suppId+date+time]',
       reminders: '++id, enabled',
+    })
+    this.version(3).stores({
+      transactions: '++id, date, type, category',
+      holdings: '++id, kind',
+      liabilities: '++id',
+      netWorth: 'date',
+      reviews: '++id, kind, date, [kind+date]',
+      focus: '++id, date',
     })
   }
 }

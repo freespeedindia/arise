@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
-import { AlertTriangle, ArrowRight, Bell, Droplet, Flame, ListChecks, Pill, Scale, Settings as Cog, Activity, Utensils, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Bell, Droplet, Flame, ListChecks, Pill, Scale, Settings as Cog, Activity, Utensils, RefreshCw, Receipt, Timer, NotebookPen, Check } from 'lucide-react'
 import { db } from '../lib/db'
 import { greeting } from '../lib/dates'
 import { isDoneNow, isDueToday, sortTasks } from '../lib/tasks'
@@ -18,13 +18,22 @@ import { addWater } from '../components/health/WaterCard'
 import { toggleDose } from '../components/health/SupplementsCard'
 import type { Tab } from '../components/BottomNav'
 import type { HealthAction } from './Health'
+import type { MoneyAction } from './Money'
+import { mmss, type FocusState } from '../lib/focus'
+import { monthKey, weekStart } from '../lib/dates'
+import { monthSummary } from '../lib/money'
 
 interface Props {
   s: Settings; today: string; schedule: ScheduledReminder[]
-  onNavigate: (t: Tab, action?: HealthAction) => void; onOpenSettings: () => void; onOpenReminders: () => void
+  onNavigate: (t: Tab, action?: HealthAction | MoneyAction) => void; onOpenSettings: () => void; onOpenReminders: () => void
+  onOpenFocus: () => void; onOpenReview: (kind: 'daily' | 'weekly' | 'monthly') => void; focus: { state: FocusState | null; left: number }
 }
 
-export default function Today({ s, today: t, schedule, onNavigate, onOpenSettings, onOpenReminders }: Props) {
+export default function Today({ s, today: t, schedule, onNavigate, onOpenSettings, onOpenReminders, onOpenFocus, onOpenReview, focus }: Props) {
+  const focusToday = useLiveQuery(() => db.focus.where('date').equals(t).toArray(), [t]) ?? []
+  const reviewToday = useLiveQuery(() => db.reviews.where('[kind+date]').equals(['daily', t]).first(), [t])
+  const weekReview = useLiveQuery(() => db.reviews.where('[kind+date]').equals(['weekly', weekStart(t)]).first(), [t])
+  const monthTx = useLiveQuery(() => db.transactions.where('date').startsWith(monthKey(t)).toArray(), [t]) ?? []
   const tasks = useLiveQuery(() => db.tasks.toArray()) ?? []
   const goals = useLiveQuery(() => db.goals.toArray()) ?? []
   const water = useLiveQuery(() => db.water.where('date').equals(t).toArray(), [t]) ?? []
@@ -48,6 +57,12 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
   const behindGoals = active.filter((g) => ['behind', 'overdue'].includes(goalPace(g, t)))
   const lowStock = activeSups.filter((x) => daysOfStock(x) <= LOW_STOCK_DAYS)
   const next = nextReminder(schedule, now)
+  const focusMin = focusToday.reduce((a, x) => a + x.minutes, 0)
+  const isReviewDay = new Date().getDay() === s.reviewDay
+  const eveningDue = !!s.eveningReviewTime && now >= s.eveningReviewTime && !reviewToday
+  const ms = monthSummary(monthTx, monthKey(t))
+  const overBudget = s.expenseCategories.filter((c) => s.budgets[c] && (ms.byCat[c] || 0) > s.budgets[c])
+  const overTotal = s.monthlyBudget > 0 && ms.expense > s.monthlyBudget
 
   // Water you should have had by now, spread evenly across your waking hours
   const dayLen = Math.max(1, toMin(s.wakeEnd) - toMin(s.wakeStart))
@@ -58,7 +73,9 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
   type Act = { title: string; sub: string; label: string; run: () => void }
   let act: Act
   const top = open[0]
-  if (top && (top.priority === 1 || (top.dueDate && top.dueDate < t && top.repeat === 'none'))) {
+  if (eveningDue) {
+    act = { title: 'Evening review', sub: open.length ? `Two minutes. ${open.length} unfinished task${open.length > 1 ? 's' : ''} can move to tomorrow's top three.` : 'Two minutes: what went well, what to fix, and tomorrow\'s top three.', label: 'Start review', run: () => onOpenReview('daily') }
+  } else if (top && (top.priority === 1 || (top.dueDate && top.dueDate < t && top.repeat === 'none'))) {
     act = { title: top.title, sub: open.length > 1 ? `High priority. ${open.length - 1} more task${open.length > 2 ? 's' : ''} after this.` : 'High priority. Last task for today.', label: 'Open tasks', run: () => onNavigate('tasks') }
   } else if (dueDose) {
     act = { title: `Take ${dueDose.s.name}`, sub: `${dueDose.s.dose}, scheduled ${dueDose.time}`, label: 'Mark taken', run: () => toggleDose(dueDose.s, t, dueDose.time) }
@@ -114,11 +131,30 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
       </div>
 
       {/* Quick log */}
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-5 gap-2">
         <Quick Icon={Droplet} label="+250 ml" onClick={() => addWater(t, 250, s.waterTargetMl)} />
         <Quick Icon={Utensils} label="Food" onClick={() => onNavigate('health', 'food')} />
         <Quick Icon={Scale} label="Weight" onClick={() => onNavigate('health', 'weight')} />
         <Quick Icon={Activity} label="Activity" onClick={() => onNavigate('health', 'activity')} />
+        <Quick Icon={Receipt} label="Expense" onClick={() => onNavigate('money', 'expense')} />
+      </div>
+
+      {/* Focus and review */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button onClick={onOpenFocus} className={`card flex items-center gap-3 p-3.5 text-left ${focus.state ? 'border-saffron' : ''}`}>
+          <Timer size={20} strokeWidth={1.7} className="shrink-0 text-saffron" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{focus.state ? (focus.state.phase === 'break' ? 'Break' : 'Focusing') : 'Focus'}</p>
+            <p className="num truncate text-xs text-muted">{focus.state ? `${mmss(focus.left)} left` : focusMin ? `${focusMin} min today` : `${s.focusMinutes} min session`}</p>
+          </div>
+        </button>
+        <button onClick={() => onOpenReview(isReviewDay && !weekReview ? 'weekly' : 'daily')} className="card flex items-center gap-3 p-3.5 text-left">
+          {reviewToday ? <Check size={20} strokeWidth={2} className="shrink-0 text-forest" /> : <NotebookPen size={20} strokeWidth={1.7} className="shrink-0 text-gold" />}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{isReviewDay && !weekReview ? 'Weekly review' : 'Review'}</p>
+            <p className="truncate text-xs text-muted">{reviewToday ? 'Done for today' : eveningDue ? 'Due now' : `Evening ${s.eveningReviewTime || ''}`}</p>
+          </div>
+        </button>
       </div>
 
       {/* Next reminder + alerts */}
@@ -130,8 +166,10 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
         </div>
         <ArrowRight size={16} className="text-faint" />
       </button>
-      {(lowStock.length > 0 || behindGoals.length > 0) && (
+      {(lowStock.length > 0 || behindGoals.length > 0 || overBudget.length > 0 || overTotal) && (
         <div className="mt-3 space-y-2">
+          {overTotal && <Alert text="This month's spending is over your limit." onClick={() => onNavigate('money')} />}
+          {!overTotal && overBudget.slice(0, 2).map((c) => <Alert key={`b${c}`} text={`${c} spending is over its monthly limit.`} onClick={() => onNavigate('money')} />)}
           {lowStock.map((x) => (
             <Alert key={`s${x.id}`} text={`${x.name} runs out in about ${daysOfStock(x)} days. Reorder.`} onClick={() => onNavigate('health')} />
           ))}

@@ -1,3 +1,4 @@
+import { moneyLinkedValue } from './money'
 import { db, type Activity, type Goal, type Supplement, type WeightEntry } from './db'
 import { addDays, daysBetween, todayKey } from './dates'
 import type { Settings } from './settings'
@@ -52,10 +53,14 @@ export function linkedValue(g: Goal, weights: WeightEntry[], acts: Activity[]): 
 export async function syncLinkedGoals(): Promise<void> {
   const goals = (await db.goals.toArray()).filter((g) => g.link)
   if (!goals.length) return
-  const [weights, acts] = await Promise.all([db.weights.toArray(), db.activities.toArray()])
+  const [weights, acts, holdings, liabilities, txs, focus] = await Promise.all([
+    db.weights.toArray(), db.activities.toArray(), db.holdings.toArray(), db.liabilities.toArray(), db.transactions.toArray(), db.focus.toArray(),
+  ])
   const { goalPercent } = await import('./goals')
   for (const g of goals) {
-    const v = linkedValue(g, weights, acts)
+    const v = g.link === 'focusHours'
+      ? +(focus.filter((f) => f.date >= g.startDate).reduce((a, f) => a + f.minutes, 0) / 60).toFixed(1)
+      : linkedValue(g, weights, acts) ?? moneyLinkedValue(g, holdings, liabilities, txs)
     if (v == null || v === g.current) continue
     const next = { ...g, current: v }
     const done = goalPercent({ ...next, completedAt: undefined }) >= 100

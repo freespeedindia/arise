@@ -1,4 +1,5 @@
-import { Download, Monitor, Moon, Sun, Upload } from 'lucide-react'
+import { Download, Monitor, Moon, Share2, Sun, Upload } from 'lucide-react'
+import { openExport } from './ExportSheet'
 import Sheet from '../components/Sheet'
 import { setSetting, type Settings, type ThemePref } from '../lib/settings'
 import { isIOS, useInstall } from '../lib/install'
@@ -33,6 +34,11 @@ export default function SettingsSheet({ open, onClose, settings }: { open: boole
           </div>
         )}
         <div>
+          <span className="label">Export and share</span>
+          <p className="mb-2 text-xs text-muted">Your complete plan as a PDF report or an Excel workbook, ready for email or any app.</p>
+          <button onClick={() => { onClose(); setTimeout(() => openExport(), 250) }} className="btn-secondary w-full"><Share2 size={16} />Export plan (PDF or Excel)</button>
+        </div>
+        <div>
           <span className="label">Backup</span>
           <p className="mb-2 text-xs text-muted">Your data lives only on this phone. Save a backup file now and then, or before changing phones.</p>
           <div className="grid grid-cols-2 gap-2">
@@ -46,7 +52,7 @@ export default function SettingsSheet({ open, onClose, settings }: { open: boole
             </label>
           </div>
         </div>
-        <p className="text-center text-xs text-faint">Arise 0.2 · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device</p>
+        <p className="text-center text-xs text-faint">Arise 0.3 · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device</p>
       </div>
     </Sheet>
   )
