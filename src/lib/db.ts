@@ -105,6 +105,24 @@ export interface Review {
 }
 export interface FocusSession { id?: number; date: string; minutes: number; label?: string; at: string }
 
+/** A personal document: ID, licence, policy, certificate... Files are stored separately. */
+export interface DocRecord {
+  id?: number
+  title: string
+  kind: string // Aadhaar, Passport, Car insurance... (user editable)
+  number?: string // document / policy number
+  holder?: string // whose document (you, spouse, car KA-01-...)
+  issuer?: string // issued by / insurer
+  issuedOn?: string
+  expiresOn?: string
+  remindDays: number // start reminding this many days before expiry
+  amount?: number // premium or fee to renew
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+export interface DocFile { id?: number; docId: number; name: string; type: string; size: number; data: ArrayBuffer; thumb?: string; addedAt: string }
+
 class AriseDB extends Dexie {
   tasks!: Table<Task, number>
   goals!: Table<Goal, number>
@@ -122,6 +140,8 @@ class AriseDB extends Dexie {
   netWorth!: Table<NetWorthPoint, string>
   reviews!: Table<Review, number>
   focus!: Table<FocusSession, number>
+  docs!: Table<DocRecord, number>
+  docFiles!: Table<DocFile, number>
   constructor() {
     super('arise')
     this.version(1).stores({
@@ -145,6 +165,10 @@ class AriseDB extends Dexie {
       netWorth: 'date',
       reviews: '++id, kind, date, [kind+date]',
       focus: '++id, date',
+    })
+    this.version(4).stores({
+      docs: '++id, kind, expiresOn',
+      docFiles: '++id, docId',
     })
   }
 }

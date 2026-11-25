@@ -14,9 +14,9 @@ All your data is stored **only on your phone** (in the browser's private storage
 |---|---|---|---|---|
 | ![Today](docs/screenshots/07-today.png) | ![Money](docs/screenshots/15-money.png) | ![Focus](docs/screenshots/19-focus-running.png) | ![Review](docs/screenshots/21-review-month.png) | ![Export](docs/screenshots/22-export.png) |
 
-| Health | Goals | Reminders | Dark mode | PDF report |
+| Documents | Health | Goals | Reminders | PDF report |
 |---|---|---|---|---|
-| ![Health](docs/screenshots/03-health-top.png) | ![Goals](docs/screenshots/06-goals.png) | ![Reminders](docs/screenshots/09-reminders.png) | ![Dark](docs/screenshots/10-today-dark.png) | ![PDF](docs/screenshots/pdf-report-page1.png) |
+| ![Documents](docs/screenshots/26-documents.png) | ![Health](docs/screenshots/03-health-top.png) | ![Goals](docs/screenshots/06-goals.png) | ![Reminders](docs/screenshots/09-reminders.png) | ![PDF](docs/screenshots/pdf-report-page1.png) |
 
 ---
 
@@ -39,7 +39,7 @@ Open Arise from the home screen icon from now on. It works without internet.
 
 ---
 
-## What's inside (version 0.3)
+## What's inside (version 0.4)
 
 - **Today** — the single next action, daily summary, one-tap logging (water, food, weight, activity, expense), focus and review shortcuts, next reminder, alerts (low stock, goals behind pace, spending over a limit), focus goal, today's tasks and a thought from Swami Vivekananda.
 - **Tasks** — one-off, daily, weekly and monthly tasks with priority, due date, reminder time, checklists and streaks.
@@ -49,6 +49,7 @@ Open Arise from the home screen icon from now on. It works without internet.
 - **Focus mode** — a full-screen timer (15 to 60 minutes, optional break) tied to a task, a short "before you start" list (Do Not Disturb, social media closed), and a log of focus time. The timer keeps running if you leave the app.
 - **Reviews** — evening review (energy, what went well, what to improve, tomorrow's top three, which become tasks), weekly and monthly reviews with every module's numbers.
 - **Export and share** — the complete plan as a PDF report or an Excel workbook (one sheet per area), shared through the phone's share sheet to email, WhatsApp, Drive or any app. Made on the phone; nothing is uploaded.
+- **Documents** — Aadhaar, PAN, passport, visa, driving licence, vehicle RC, every kind of insurance, certificates and any other PDF or photo. Each has its number, holder, issuer, issue and expiry dates; reminders start 15 to 90 days before expiry and expired items show on Today. PDFs open inside the app page by page; share or save any file. Optional 4-digit PIN lock. Files never leave the phone.
 - **Reminders** — water through waking hours, run days, supplement doses, timed tasks, evening review, weekly review and your own reminders.
 - **Backup** — save and restore a backup file from Settings.
 

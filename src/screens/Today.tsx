@@ -22,6 +22,7 @@ import type { MoneyAction } from './Money'
 import { mmss, type FocusState } from '../lib/focus'
 import { monthKey, weekStart } from '../lib/dates'
 import { monthSummary } from '../lib/money'
+import { docStatus, expiryText } from '../lib/documents'
 
 interface Props {
   s: Settings; today: string; schedule: ScheduledReminder[]
@@ -33,6 +34,7 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
   const focusToday = useLiveQuery(() => db.focus.where('date').equals(t).toArray(), [t]) ?? []
   const reviewToday = useLiveQuery(() => db.reviews.where('[kind+date]').equals(['daily', t]).first(), [t])
   const weekReview = useLiveQuery(() => db.reviews.where('[kind+date]').equals(['weekly', weekStart(t)]).first(), [t])
+  const docs = useLiveQuery(() => db.docs.toArray()) ?? []
   const monthTx = useLiveQuery(() => db.transactions.where('date').startsWith(monthKey(t)).toArray(), [t]) ?? []
   const tasks = useLiveQuery(() => db.tasks.toArray()) ?? []
   const goals = useLiveQuery(() => db.goals.toArray()) ?? []
@@ -63,6 +65,7 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
   const ms = monthSummary(monthTx, monthKey(t))
   const overBudget = s.expenseCategories.filter((c) => s.budgets[c] && (ms.byCat[c] || 0) > s.budgets[c])
   const overTotal = s.monthlyBudget > 0 && ms.expense > s.monthlyBudget
+  const docAlerts = docs.map((d) => ({ d, st: docStatus(d, t) })).filter((x) => x.st.status === 'expired' || x.st.status === 'soon').sort((a, b) => (a.st.days ?? 0) - (b.st.days ?? 0))
 
   // Water you should have had by now, spread evenly across your waking hours
   const dayLen = Math.max(1, toMin(s.wakeEnd) - toMin(s.wakeStart))
@@ -166,8 +169,9 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
         </div>
         <ArrowRight size={16} className="text-faint" />
       </button>
-      {(lowStock.length > 0 || behindGoals.length > 0 || overBudget.length > 0 || overTotal) && (
+      {(lowStock.length > 0 || behindGoals.length > 0 || overBudget.length > 0 || overTotal || docAlerts.length > 0) && (
         <div className="mt-3 space-y-2">
+          {docAlerts.slice(0, 3).map(({ d }) => <Alert key={`d${d.id}`} text={`${d.title}: ${expiryText(d, t).toLowerCase()}.`} onClick={() => onNavigate('docs')} />)}
           {overTotal && <Alert text="This month's spending is over your limit." onClick={() => onNavigate('money')} />}
           {!overTotal && overBudget.slice(0, 2).map((c) => <Alert key={`b${c}`} text={`${c} spending is over its monthly limit.`} onClick={() => onNavigate('money')} />)}
           {lowStock.map((x) => (

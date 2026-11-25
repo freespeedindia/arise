@@ -50,7 +50,7 @@ const URL = 'http://localhost:4173/arise/'
   const report = []
   const closeAll = async () => { for (let k = 0; k < 3; k++) { const c = page.locator('[aria-label="Close"], [aria-label="Close focus mode"]'); if (await c.count()) { await c.first().tap().catch(() => {}); await w(400) } } }
   const SKIP = /^(restore|tap again to delete)$/i
-  for (const tab of ['today', 'tasks', 'goals', 'health', 'money']) {
+  for (const tab of ['today', 'tasks', 'goals', 'health', 'money', 'docs']) {
     await page.goto(URL + '#' + tab); await page.reload(); await w(900)
     const buttons = await listButtons('page')
     console.log(`\n== ${tab}: ${buttons.length} buttons`)

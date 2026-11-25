@@ -32,6 +32,11 @@ export interface Settings {
   assetKinds: string[]
   monthlyBudget: number // 0 = none
   budgets: Record<string, number> // per expense category
+  // Documents
+  docKinds: string[]
+  docReminderTime: string
+  pinHash?: string // optional lock for Documents (SHA-256 of salt + PIN)
+  pinSalt?: string
   // Focus
   focusMinutes: number
   breakMinutes: number
@@ -48,6 +53,8 @@ export const defaultSettings: Settings = {
   assetKinds: ['Bank & cash', 'Stocks', 'Mutual funds', 'Fixed deposits', 'PPF / EPF / NPS', 'Gold', 'Real estate', 'Other'],
   monthlyBudget: 0,
   budgets: {},
+  docKinds: ['Aadhaar', 'PAN card', 'Passport', 'Visa', 'Driving licence', 'Vehicle RC', 'Car insurance', 'Bike insurance', 'Health insurance', 'Life insurance', 'Home insurance', 'Voter ID', 'Certificates', 'Property', 'Bank and tax', 'Other'],
+  docReminderTime: '09:00',
   focusMinutes: 25,
   breakMinutes: 5,
 }
