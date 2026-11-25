@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 import { Download, FileSpreadsheet, FileText, Share2 } from 'lucide-react'
 import Sheet from '../components/Sheet'
@@ -50,7 +51,7 @@ export default function ExportSheet({ today }: { today: string }) {
     if (r === 'downloaded') toast('Saved to your Downloads')
   }
   const save = async () => { if (file) (await import('../lib/export')).downloadFile(file) }
-  const canShareFiles = typeof navigator !== 'undefined' && !!navigator.share
+  const canShareFiles = Capacitor.isNativePlatform() || (typeof navigator !== 'undefined' && !!navigator.share)
 
   return (
     <Sheet open={open} onClose={() => setOpen(false)} title="Export your plan">

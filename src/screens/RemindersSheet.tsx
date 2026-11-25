@@ -4,7 +4,8 @@ import { Bell, BellOff, Check, Plus, Trash2 } from 'lucide-react'
 import Sheet from '../components/Sheet'
 import { db, type ReminderRepeat } from '../lib/db'
 import { setSetting, setSettings, type Settings } from '../lib/settings'
-import { notificationPermission, requestNotifications, showNotification } from '../lib/notifier'
+import { notificationPermission, refreshPermission, requestNotifications, showNotification } from '../lib/notifier'
+import { isNative } from '../lib/native'
 import { isIOS, isStandalone } from '../lib/install'
 import type { ScheduledReminder } from '../lib/reminders'
 import { nowHHMM } from '../lib/reminders'
@@ -21,7 +22,7 @@ export default function RemindersSheet({ open, onClose, s, schedule, today }: {
   const [time, setTime] = useState('09:00')
   const [repeat, setRepeat] = useState<ReminderRepeat>('daily')
   const [date, setDate] = useState(today)
-  useEffect(() => { if (open) setPerm(notificationPermission()) }, [open])
+  useEffect(() => { if (open) { setPerm(notificationPermission()); refreshPermission().then(setPerm) } }, [open])
   const now = nowHHMM()
 
   const enable = async () => {
@@ -47,7 +48,7 @@ export default function RemindersSheet({ open, onClose, s, schedule, today }: {
               <Bell size={18} className="mt-0.5 shrink-0 text-forest" />
               <div className="text-sm">
                 <p className="font-semibold">Phone notifications are on</p>
-                <p className="mt-1 text-muted">They arrive while Arise is open or recently used. Reminders with the app fully closed come with cloud sync (Phase 4).</p>
+                <p className="mt-1 text-muted">{isNative() ? 'Your reminders for the next three days are booked with your iPhone, so they arrive even when Arise is closed. Open Arise once every day or two to keep them topped up.' : 'They arrive while Arise is open or recently used. For reminders with Arise fully closed, use the iPhone app version.'}</p>
                 <button onClick={() => setSetting('notifications', false)} className="mt-2 text-sm font-semibold text-crimson">Turn off</button>
               </div>
             </div>
@@ -59,7 +60,7 @@ export default function RemindersSheet({ open, onClose, s, schedule, today }: {
                 {needsInstall ? (
                   <p className="mt-1 text-muted">On iPhone, first add Arise to your Home Screen (Share, then Add to Home Screen), open it from there, then come back here.</p>
                 ) : perm === 'denied' ? (
-                  <p className="mt-1 text-muted">Notifications are blocked for this site. Allow them in your phone's settings for this app, then return here.</p>
+                  <p className="mt-1 text-muted">{isNative() ? 'Notifications are off for Arise. Open the iPhone Settings app, tap Arise, then Notifications, and turn on Allow Notifications.' : "Notifications are blocked for this site. Allow them in your phone's settings for this app, then return here."}</p>
                 ) : perm === 'unsupported' ? (
                   <p className="mt-1 text-muted">This browser cannot show notifications. Reminders still appear on the Today screen.</p>
                 ) : (

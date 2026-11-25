@@ -1,0 +1,20 @@
+{
+	"appId": "in.freespeedindia.arise",
+	"appName": "Arise",
+	"webDir": "dist",
+	"backgroundColor": "#F7F2E9",
+	"ios": {
+		"contentInset": "never",
+		"backgroundColor": "#F7F2E9"
+	},
+	"plugins": {
+		"LocalNotifications": {
+			"iconColor": "#CF6D1E"
+		}
+	},
+	"packageClassList": [
+		"FilesystemPlugin",
+		"LocalNotificationsPlugin",
+		"SharePlugin"
+	]
+}

@@ -3,6 +3,7 @@ import { db } from './db'
 import { todayKey } from './dates'
 import { celebrate } from './celebrate'
 import { showNotification } from './notifier'
+import { isNative, nativeFocusAlarm } from './native'
 
 /** A running focus timer survives closing the app: it is stored with its end time. */
 export interface FocusState { phase: 'focus' | 'break'; endsAt: number; minutes: number; label?: string; taskId?: number; pausedLeft?: number }
@@ -12,6 +13,12 @@ export function readFocus(): FocusState | null {
   try { return JSON.parse(localStorage.getItem(KEY) || 'null') } catch { return null }
 }
 export function writeFocus(s: FocusState | null) {
+  // iPhone app: let iOS ring at the end, even if Arise is closed by then
+  if (isNative()) {
+    const run = s && s.pausedLeft == null
+    nativeFocusAlarm(run ? s.endsAt : null, s?.phase === 'break' ? 'Break over' : 'Focus session complete',
+      s?.phase === 'break' ? 'Ready for the next focus session.' : `${s?.minutes ?? ''} minutes done. Time for a short break.`).catch(() => {})
+  }
   try { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY) } catch { /* private mode */ }
   listeners.forEach((l) => l())
 }
@@ -52,14 +59,14 @@ export function useFocus(breakMinutes: number) {
       writeFocus(null)
       logFocus(state.minutes, state.label).then(() => {
         celebrate(true, `Focus session complete: ${state.minutes} minutes`)
-        showNotification('Focus session complete', `${state.minutes} minutes done. Take a ${breakMinutes} minute break.`, 'focus-done')
+        if (!isNative()) showNotification('Focus session complete', `${state.minutes} minutes done. Take a ${breakMinutes} minute break.`, 'focus-done')
         // Only start the break if the session ended recently (not while the app was closed for hours)
         if (breakMinutes > 0 && Date.now() - state.endsAt < breakMinutes * 60000) startBreak(breakMinutes)
       })
     } else {
       writeFocus(null)
       celebrate(false, 'Break over. Ready for the next session.')
-      showNotification('Break over', 'Ready for the next focus session.', 'focus-break')
+      if (!isNative()) showNotification('Break over', 'Ready for the next focus session.', 'focus-break')
     }
   }, [now, state, breakMinutes])
   const left = state ? (state.pausedLeft ?? Math.max(0, state.endsAt - now)) : 0

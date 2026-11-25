@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 // Builds the full plan as a PDF or Excel file. Loaded only when needed (keeps the app fast).
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -35,6 +36,8 @@ export async function buildFile(format: ExportFormat, range?: ExportRange): Prom
 
 /** Open the phone's share sheet (Mail, WhatsApp, Drive...) or fall back to a download. */
 export async function shareFile(file: File): Promise<'shared' | 'downloaded' | 'cancelled'> {
+  const { isNative, nativeShareFiles } = await import('./native')
+  if (isNative()) return nativeShareFiles([file])
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean }
   if (nav.share && nav.canShare?.({ files: [file] })) {
     try {
@@ -49,6 +52,8 @@ export async function shareFile(file: File): Promise<'shared' | 'downloaded' | '
   return 'downloaded'
 }
 export function downloadFile(file: File) {
+  // The iPhone app has no Downloads folder: open the share sheet, which has "Save to Files".
+  if (Capacitor.isNativePlatform()) { import('./native').then((m) => m.nativeShareFiles([file])).catch(() => {}); return }
   const a = document.createElement('a')
   a.href = URL.createObjectURL(file)
   a.download = file.name

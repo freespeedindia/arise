@@ -10,6 +10,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/ios": "^7.6.10",
+    "@capacitor/local-notifications": "^7.0.7",
+    "@capacitor/share": "^7.0.4",
     "dexie": "^4.4.7",
     "dexie-react-hooks": "^1.1.7",
     "framer-motion": "^11.18.2",
@@ -23,6 +28,7 @@
     "write-excel-file": "^2.3.10"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.10",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",

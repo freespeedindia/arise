@@ -34,6 +34,9 @@ All your data is stored **only on your phone** (in the browser's private storage
 
 Open Arise from the home screen icon from now on. It works without internet.
 
+### iPhone app (Xcode)
+The `ios/` folder is Arise as a native iPhone app. In this version, reminders arrive even when the app is closed. See **[IPHONE.md](IPHONE.md)** for the steps: open it in Xcode, sign in with your Apple ID, and press Play.
+
 > Your data lives inside the installed app on that phone. If you delete the app or clear
 > the browser's data, your entries are lost. Use Settings, Save backup now and then.
 
@@ -71,6 +74,8 @@ Design: matte saffron, gold, cream, deep red and green; Inter and Source Serif; 
 ## For developers
 
 Stack: React + TypeScript + Vite, Tailwind CSS, Framer Motion, Recharts, lucide icons, Dexie (IndexedDB), vite-plugin-pwa. Export uses jsPDF, jspdf-autotable and write-excel-file, loaded only when you export.
+
+iPhone app: Capacitor 7 with Swift Package Manager. `node scripts/build-ios.mjs` rebuilds the web app, syncs it into `ios/`, and copies the plugin code into `ios/App/CapApp-SPM/Plugins`, so the Mac needs only Xcode. Add `--zip <dir>` to write the zip. The native-only code is in `src/lib/native.ts`: iOS local notifications booked 3 days ahead, focus alarm, and the share sheet through Filesystem and Share. `tests/native-ios.cjs` checks those paths against a mocked native bridge.
 
 Tests: `npm test` (logic incl. 2-year schedules, money, net worth and reports). `tests/e2e-phone.cjs` clicks through the whole app on iPhone and Android screen sizes with Playwright; `tests/button-audit.cjs` taps every button on every screen and inside every sheet.
 

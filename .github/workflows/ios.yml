@@ -1,0 +1,43 @@
+name: iPhone app build check
+
+# Builds the Xcode project on a Mac (for the iPhone Simulator, no signing needed),
+# opens Arise in the simulator and saves screenshots, so every change to ios/ is proven to compile.
+on:
+  push:
+    branches: [ios-app]
+  pull_request:
+    paths: ['ios/**', 'src/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the iPhone Simulator
+        run: |
+          xcodebuild -version
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -40
+          test -d build/Build/Products/Debug-iphonesimulator/App.app
+      - name: Run in the simulator and take screenshots
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone 16') or x['name'].startswith('iPhone 15')))")
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl install "$DEV" build/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DEV" in.freespeedindia.arise
+          mkdir -p shots
+          sleep 12
+          xcrun simctl io "$DEV" screenshot shots/01-launch.png
+          sleep 8
+          xcrun simctl io "$DEV" screenshot shots/02-after-20s.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-simulator-screenshots
+          path: shots

@@ -10,7 +10,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
   listeners.forEach((l) => l())
 })
 
-export const isStandalone = () =>
+import { Capacitor } from '@capacitor/core'
+
+export const isStandalone = () => Capacitor.isNativePlatform() ||
   window.matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
 
