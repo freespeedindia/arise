@@ -1,15 +1,10 @@
-import confetti from 'canvas-confetti'
+// Quiet, professional feedback: a short haptic tick and a toast message.
+type ToastListener = (msg: string) => void
+const listeners = new Set<ToastListener>()
+export const onToast = (l: ToastListener) => { listeners.add(l); return () => { listeners.delete(l) } }
+export function toast(msg: string) { listeners.forEach((l) => l(msg)) }
 
-export function celebrate(big = false) {
-  const colors = ['#FF9933', '#22C55E', '#EAB308', '#3B82F6', '#EC4899']
-  if (!big) {
-    confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 }, colors, scalar: 0.8 })
-    return
-  }
-  const end = Date.now() + 1200
-  ;(function frame() {
-    confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors })
-    confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors })
-    if (Date.now() < end) requestAnimationFrame(frame)
-  })()
+export function celebrate(big = false, msg?: string) {
+  try { navigator.vibrate?.(big ? [20, 40, 20] : 12) } catch { /* not supported */ }
+  if (msg) toast(msg)
 }

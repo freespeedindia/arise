@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { AlertCircle, Calendar, Check, ChevronDown, Clock, Flame, ListTodo, MoreHorizontal, Repeat } from 'lucide-react'
 import { useState } from 'react'
 import { db, type Task } from '../lib/db'
 import { friendlyDate } from '../lib/dates'
@@ -6,21 +7,19 @@ import { isDoneNow, isOverdue, repeatLabel, streak, streakUnit, toggleTask } fro
 import { celebrate } from '../lib/celebrate'
 import { areaStyle } from '../lib/goals'
 
-const prioColor = { 1: 'bg-rose-500', 2: 'bg-amber-400', 3: 'bg-sky-400' } as const
+const prio = { 1: 'bg-crimson', 2: 'bg-gold', 3: 'bg-faint' } as const
+const prioName = { 1: 'High priority', 2: 'Medium priority', 3: 'Low priority' } as const
 
-export default function TaskItem({ task, onEdit }: { task: Task; onEdit?: (t: Task) => void }) {
-  const done = isDoneNow(task)
-  const s = streak(task)
-  const overdue = isOverdue(task)
+export default function TaskItem({ task, onEdit, today }: { task: Task; onEdit?: (t: Task) => void; today?: string }) {
+  const done = isDoneNow(task, today)
+  const s = streak(task, today)
+  const overdue = isOverdue(task, today)
   const [open, setOpen] = useState(false)
   const checklistDone = task.checklist.filter((c) => c.done).length
 
   const tick = async () => {
-    const nowDone = await toggleTask(task)
-    if (nowDone) {
-      celebrate(false)
-      navigator.vibrate?.(15)
-    }
+    const nowDone = await toggleTask(task, today)
+    if (nowDone) celebrate(false)
   }
   const toggleItem = async (id: string) => {
     if (task.id == null) return
@@ -28,42 +27,46 @@ export default function TaskItem({ task, onEdit }: { task: Task; onEdit?: (t: Ta
   }
 
   return (
-    <motion.div layout className={`card overflow-hidden ${done ? 'opacity-60' : ''}`}>
-      <div className="flex items-center gap-3 p-3">
-        <button onClick={tick} aria-label={done ? 'Mark not done' : 'Mark done'}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[3px] transition-colors ${done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 dark:border-ink-700'}`}>
-          <AnimatePresence>{done && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="text-xl font-black">✓</motion.span>}</AnimatePresence>
+    <motion.div layout className="card overflow-hidden">
+      <div className="flex items-center gap-3 py-3 pl-3 pr-2">
+        <button onClick={tick} aria-label={done ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${done ? 'border-forest bg-forest text-white' : 'border-line text-transparent'}`}>
+          <Check size={18} strokeWidth={2.5} />
         </button>
         <button className="min-w-0 flex-1 text-left" onClick={() => (task.checklist.length ? setOpen(!open) : onEdit?.(task))}>
-          <p className={`truncate text-[17px] font-bold ${done ? 'line-through' : ''}`}>{task.title}</p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-gray-500">
-            <span className={`h-2 w-2 rounded-full ${prioColor[task.priority]}`} />
-            {task.repeat !== 'none' && <span>🔁 {repeatLabel[task.repeat]}</span>}
+          <div className="flex items-center gap-2">
+            <span title={prioName[task.priority]} className={`h-1.5 w-1.5 shrink-0 rounded-full ${prio[task.priority]}`} />
+            <p className={`truncate text-[15.5px] font-medium ${done ? 'text-faint line-through' : ''}`}>{task.title}</p>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-3.5 text-xs text-muted">
+            {task.repeat !== 'none' && <span className="inline-flex items-center gap-1"><Repeat size={12} />{repeatLabel[task.repeat]}</span>}
             {task.repeat === 'none' && task.dueDate && (
-              <span className={overdue ? 'text-rose-500' : ''}>{overdue ? '⚠️ ' : '📅 '}{friendlyDate(task.dueDate)}</span>
+              <span className={`inline-flex items-center gap-1 ${overdue ? 'font-semibold text-crimson' : ''}`}>
+                {overdue ? <AlertCircle size={12} /> : <Calendar size={12} />}{overdue ? `Overdue · ${friendlyDate(task.dueDate)}` : friendlyDate(task.dueDate)}
+              </span>
             )}
-            {task.area && <span className={areaStyle[task.area].text}>{areaStyle[task.area].emoji} {task.area}</span>}
-            {task.checklist.length > 0 && <span>☑️ {checklistDone}/{task.checklist.length}</span>}
+            {task.time && <span className="inline-flex items-center gap-1"><Clock size={12} />{task.time}</span>}
+            {task.area && <span className={`font-medium ${areaStyle[task.area].text}`}>{task.area}</span>}
+            {task.checklist.length > 0 && <span className="inline-flex items-center gap-1"><ListTodo size={12} />{checklistDone}/{task.checklist.length}<ChevronDown size={12} className={open ? 'rotate-180' : ''} /></span>}
           </div>
         </button>
         {s > 0 && (
-          <div className="flex shrink-0 flex-col items-center rounded-2xl bg-orange-50 px-2 py-1 dark:bg-orange-500/10" title={`${s} ${streakUnit[task.repeat]} streak`}>
-            <span className="text-lg leading-none">🔥</span>
-            <span className="text-xs font-black text-saffron-600">{s}</span>
+          <div className="flex shrink-0 items-center gap-0.5 rounded-lg bg-saffron-soft px-2 py-1 text-xs font-semibold text-saffron-deep" title={`${s} ${streakUnit[task.repeat]} streak`}>
+            <Flame size={13} />{s}
           </div>
         )}
         {onEdit && (
-          <button onClick={() => onEdit(task)} aria-label="Edit task" className="flex h-10 w-8 shrink-0 items-center justify-center text-xl text-gray-400">⋯</button>
+          <button onClick={() => onEdit(task)} aria-label={`Edit "${task.title}"`} className="flex h-10 w-9 shrink-0 items-center justify-center text-faint"><MoreHorizontal size={18} /></button>
         )}
       </div>
       <AnimatePresence>
         {open && task.checklist.length > 0 && (
           <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-            <div className="space-y-1 border-t border-gray-100 px-4 py-2 dark:border-ink-700">
+            <div className="border-t border-line px-4 py-1">
               {task.checklist.map((c) => (
-                <button key={c.id} onClick={() => toggleItem(c.id)} className="flex w-full items-center gap-3 py-2 text-left">
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-lg border-2 text-sm ${c.done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'}`}>{c.done ? '✓' : ''}</span>
-                  <span className={`font-semibold ${c.done ? 'text-gray-400 line-through' : ''}`}>{c.text}</span>
+                <button key={c.id} onClick={() => toggleItem(c.id)} className="flex w-full items-center gap-3 py-2.5 text-left">
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-md border-[1.5px] ${c.done ? 'border-forest bg-forest text-white' : 'border-line'}`}>{c.done && <Check size={12} strokeWidth={3} />}</span>
+                  <span className={`text-sm ${c.done ? 'text-faint line-through' : ''}`}>{c.text}</span>
                 </button>
               ))}
             </div>

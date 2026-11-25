@@ -10,8 +10,11 @@ home screen, and from then on it opens like a normal app, works offline, and nee
 
 All your data is stored **only on your phone** (in the browser's private storage). Nothing is sent anywhere.
 
-| Today | Tasks | Goals | Goal detail | Dark mode |
+| Today | Health | Goals | Reminders | Dark mode |
 |---|---|---|---|---|
+| ![Today](docs/screenshots/07-today.png) | ![Health](docs/screenshots/03-health-top.png) | ![Goals](docs/screenshots/06-goals.png) | ![Reminders](docs/screenshots/09-reminders.png) | ![Dark](docs/screenshots/10-today-dark.png) |
+
+---|---|---|---|---|
 | ![Today](docs/screenshots/2-today.png) | ![Tasks](docs/screenshots/4-tasks.png) | ![Goals](docs/screenshots/7-goals.png) | ![Goal](docs/screenshots/9-goal-detail.png) | ![Dark](docs/screenshots/10-today-dark.png) |
 
 ---
@@ -35,23 +38,25 @@ Open Arise from the home screen icon from now on. It works without internet.
 
 ---
 
-## ✨ What's in Phase 1
+## What's inside (version 0.2)
 
-- **Today dashboard** — greeting, “Do this now” (the single most important thing), task progress ring,
-  a Vivekananda quote, your focus goal and today's tasks.
-- **Tasks** — one-off, daily, weekly and monthly tasks, with priority, due date, checklists and 🔥 streaks.
-- **Goals** — short-term and long-term goals in four areas: 💪 Health (green), 💰 Wealth (gold),
-  🧘 Mind (saffron), 🚀 Work (blue). Each has a deadline, optional number target and milestones,
-  percent complete, and whether you are on pace. Confetti when you finish one 🎉.
-- **116 quotes** of Swami Vivekananda from *The Complete Works*, one per day (tap for another).
-- Light and dark mode, big buttons, one-hand use.
+- **Today** — the single next action, daily summary (tasks, water, calories, doses), one-tap logging, next reminder, alerts (low stock, goals behind pace), focus goal, today's tasks and a thought from Swami Vivekananda.
+- **Tasks** — one-off, daily, weekly and monthly tasks with priority, due date, reminder time, checklists and streaks.
+- **Goals** — short and long-term goals in Health (green), Wealth (gold), Mind (saffron) and Work (deep red), with targets that can go up or down, milestones and on-pace tracking. Health goals can update themselves from your weight, runs or workouts.
+- **Health** — weight plan with a chart of actual vs plan, BMI, calories with recent foods, water quick-add, activity log with pace, supplements with dose ticks and low-stock warnings.
+- **Reminders** — water every 1–2 hours in waking hours, run days, each supplement dose, timed tasks, evening review, weekly goal review and your own reminders.
+- **Backup** — save and restore a backup file from Settings.
+
+Design: matte saffron, gold, cream, deep red and green; Inter and Source Serif; line icons; light and dark mode.
+
+**About reminders:** phone notifications arrive while Arise is open or recently used. Reminders that arrive when the app is fully closed need a small server and come with cloud sync in Phase 4.
 
 ## 🗺️ Roadmap
 
 | Phase | What |
 |---|---|
 | 1 ✅ | App shell, Today, Tasks, Goals, quotes, install on phone |
-| 2 | Health (weight plan & chart, calories, water), runs, supplements, phone reminders |
+| 2 ✅ | Health (weight plan & chart, calories, water), runs, supplements, phone reminders |
 | 3 | Money: expenses, budget, income, investments, charts |
 | 4 | Email reminders & summaries, cloud sync, daily/weekly/monthly reviews, focus mode |
 
@@ -59,7 +64,9 @@ Open Arise from the home screen icon from now on. It works without internet.
 
 ## 🛠️ For developers
 
-Stack: React + TypeScript + Vite, Tailwind CSS, Framer Motion, Dexie (IndexedDB), vite-plugin-pwa.
+Stack: React + TypeScript + Vite, Tailwind CSS, Framer Motion, Recharts, lucide icons, Dexie (IndexedDB), vite-plugin-pwa.
+
+Tests: `npx vitest run` (logic, incl. 2-year schedules). `tests/e2e-phone.cjs` clicks through the whole app on iPhone and Android screen sizes with Playwright.
 
 ```bash
 npm install

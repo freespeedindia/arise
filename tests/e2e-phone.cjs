@@ -1,0 +1,265 @@
+// End-to-end phone test of Arise. Usage: node run.cjs <device> <outDir>
+const { chromium, devices } = require('playwright')
+const [, , deviceName = 'iphone', OUT = '.'] = process.argv
+const URL = 'http://localhost:4173/arise/'
+const profile = deviceName === 'iphone'
+  ? { ...devices['iPhone 15'], defaultBrowserType: undefined }
+  : { ...devices['Pixel 7'], defaultBrowserType: undefined }
+delete profile.defaultBrowserType
+
+const results = []
+const check = (name, ok, info = '') => { results.push({ name, ok: !!ok, info }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  — ' + info : ''}`) }
+const T0 = '2026-11-25T07:31:00+05:30' // Wednesday morning, India time
+
+;(async () => {
+  const browser = await chromium.launch()
+  const ctx = await browser.newContext({ ...profile, timezoneId: 'Asia/Kolkata', locale: 'en-IN', permissions: ['notifications'] })
+  const page = await ctx.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('console', (m) => m.type() === 'error' && !/fonts\.g/.test(m.text()) && errors.push(m.text()))
+  // Record notifications instead of showing them
+  await page.addInitScript(() => {
+    window.__notes = []
+    if (/iPhone/.test(navigator.userAgent)) Object.defineProperty(navigator, 'standalone', { get: () => window.__standalone !== false })
+    const rec = (title, opts) => window.__notes.push({ title, body: opts && opts.body })
+    if (window.ServiceWorkerRegistration) ServiceWorkerRegistration.prototype.showNotification = async function (t, o) { rec(t, o) }
+    window.Notification = class { constructor(t, o) { rec(t, o) } static get permission() { return 'granted' } static async requestPermission() { return 'granted' } }
+  })
+  await page.clock.setFixedTime(new Date(T0))
+  const shot = (n) => page.screenshot({ path: `${OUT}/${deviceName}-${n}.png` })
+  const top = () => page.evaluate(() => window.scrollTo(0, 0))
+  const tap = (sel) => page.locator(sel).first().click()
+  const text = async () => (await page.locator('body').innerText()).toLowerCase()
+  const wait = (ms = 400) => page.waitForTimeout(ms)
+
+  // 1. Onboarding
+  await page.goto(URL); await wait(1200)
+  await shot('01-welcome')
+  check('Welcome screen shows', (await text()).includes('what should we call you?'))
+  await page.fill('#welcome-name', 'Guruprasad'); await tap('text=Begin'); await wait(900)
+  check('Greeting uses name', (await text()).includes('good morning, guruprasad'))
+  check('No emoji characters on Today', !/\p{Extended_Pictographic}/u.test(await text()))
+
+  // 2. Tasks
+  await tap('nav >> text=Tasks'); await wait()
+  const addTask = async ({ title, prio = 'Medium', repeat = 'Once', date, time, area, steps = [] }) => {
+    await tap('[aria-label="Add task"]'); await wait()
+    await page.fill('#task-title', title)
+    await tap(`[role=dialog] button:text-is("${prio}")`)
+    await tap(`[role=dialog] button:text-is("${repeat}")`)
+    if (date !== undefined) await page.fill('#task-date', date)
+    if (time) await page.fill('#task-time', time)
+    if (area) await tap(`[role=dialog] button:text-is("${area}")`)
+    for (const s of steps) { await page.fill('[aria-label="Add a step"]', s); await tap('[aria-label="Add step"]') }
+    await tap('[role=dialog] button:text-is("Add task")'); await wait(600)
+  }
+  await addTask({ title: 'Prepare board presentation', prio: 'High', date: '2026-11-25', area: 'Work', steps: ['Draft slides', 'Rehearse'] })
+  await addTask({ title: 'Morning meditation', repeat: 'daily', date: '2026-11-25', time: '06:15', area: 'Mind' })
+  await addTask({ title: 'Weekly planning', repeat: 'weekly', date: '2026-11-25', area: 'Work' })
+  await addTask({ title: 'Pay credit card bill', repeat: 'monthly', date: '2026-11-25', time: '10:00', area: 'Wealth' })
+  await addTask({ title: 'Renew passport', prio: 'Low', date: '2026-12-10' })
+  await addTask({ title: 'Learn Sanskrit basics', prio: 'Low', date: '' })
+  let body = await text()
+  check('Today filter shows 4 tasks due today', (body.match(/0 of 4 done today/) || []).length === 1, body.match(/\d+ of \d+ done today/)?.[0])
+  await tap('[aria-label^="Mark \\"Morning meditation\\" done"]'); await wait()
+  body = await text()
+  check('Ticking a daily task counts as done', body.includes('1 of 4 done today'))
+  check('Daily streak starts at 1', (await page.locator('[title="1 day streak"]').count()) === 1)
+  await tap('button:has-text("0/2")'); await wait(400)
+  await tap('button:has-text("Draft slides")'); await wait(300)
+  check('Checklist step can be ticked', (await text()).includes('1/2'))
+  await shot('02-tasks')
+  await tap('button:text-is("Upcoming")'); await wait()
+  body = await text()
+  check('Upcoming shows future one-off task', body.includes('renew passport'))
+  await tap('button:text-is("Someday")'); await wait()
+  check('Someday shows undated task', (await text()).includes('learn sanskrit basics'))
+  await tap('button:text-is("Recurring")'); await wait()
+  body = await text()
+  check('Recurring shows 3 repeating tasks', ['Morning meditation', 'Weekly planning', 'Pay credit card bill'].every((t) => body.includes(t.toLowerCase())))
+  // edit + delete
+  await tap('[aria-label="Edit \\"Learn Sanskrit basics\\""]').catch(() => {})
+  await tap('button:text-is("Someday")'); await wait()
+  await tap('[aria-label="Edit \\"Learn Sanskrit basics\\""]'); await wait()
+  await page.fill('#task-title', 'Learn Sanskrit (30 min a week)'); await tap('[role=dialog] button:text-is("Save changes")'); await wait()
+  check('Editing a task saves', (await text()).includes('learn sanskrit (30 min a week)'))
+  await tap('[aria-label="Edit \\"Learn Sanskrit (30 min a week)\\""]'); await wait()
+  await tap('[role=dialog] button:text-is("Delete task")'); await wait(200)
+  check('Delete asks for a second tap', (await text()).includes('tap again to delete'))
+  await tap('[role=dialog] button:text-is("Tap again to delete")'); await wait()
+  check('Task deleted', !(await text()).includes('learn sanskrit'))
+  await tap('button:text-is("Today")'); await wait()
+
+  // 3. Health
+  await tap('nav >> text=Health'); await wait(700)
+  await tap('[aria-label="Weight plan settings"]'); await wait()
+  await page.fill('[aria-label="Starting weight"]', '80')
+  await page.fill('[aria-label="Target weight"]', '72')
+  await page.fill('[aria-label="Target date"]', '2027-03-25')
+  await page.fill('#p-h', '175')
+  body = await text()
+  check('Plan shows weekly pace', /-0\.4\d kg per week/.test(body), body.match(/-?\d\.\d\d kg per week/)?.[0])
+  await tap('[role=dialog] button:text-is("Save plan")'); await wait(700)
+  await tap('button:text-is("Log weight")'); await wait()
+  await page.fill('#w-kg', '79.6'); await tap('[role=dialog] button:text-is("Save")'); await wait(700)
+  body = await text()
+  check('Weight logged and shown', body.includes('79.6'))
+  check('BMI shown', body.includes('bmi 26'))
+  for (let i = 0; i < 3; i++) { await tap('button:text-is("+ 1 L")'); await wait(250) }
+  body = await text()
+  check('Water adds up to 3.00 L', body.includes('3.00'))
+  check('Water target message', body.includes('target reached'))
+  await tap('button:text-is("Add food")'); await wait()
+  await page.fill('#f-n', 'Idli and sambar'); await page.fill('#f-k', '320'); await tap('[role=dialog] button:text-is("Add")'); await wait()
+  await tap('button:text-is("Add food")'); await wait()
+  check('Recent food offered as one-tap chip', (await page.locator('[role=dialog] button:has-text("Idli and sambar")').count()) === 1)
+  await tap('[role=dialog] button:has-text("Idli and sambar")'); await wait()
+  check('Calories total 640', (await text()).includes('640'))
+  await tap('button:text-is("Log activity")'); await wait()
+  await page.fill('#a-m', '32'); await page.fill('#a-k', '5.2')
+  check('Run pace computed', (await text()).includes('6:09 /km'))
+  await tap('[role=dialog] button:text-is("Save")'); await wait(600)
+  check('Run appears in week stats', (await text()).includes('5.2'))
+  await tap('button:text-is("Add supplement")'); await wait()
+  await page.fill('#s-n', 'Vitamin D3'); await page.fill('#s-s', '6')
+  await tap('[role=dialog] button:has-text("Add time")'); await wait(200)
+  await tap('[role=dialog] button:text-is("Save")'); await wait(600)
+  body = await text()
+  check('Low stock warning (6 units, 2 a day)', body.includes('about 3 days'))
+  await tap('[aria-label="Take Vitamin D3 at 08:00"]'); await wait(500)
+  check('Ticking a dose lowers stock', (await text()).includes('5 left'))
+  await top(); await wait(2800); await shot('03-health-top')
+  await page.evaluate(() => window.scrollTo(0, 900)); await wait(500)
+  await shot('04-health-weight')
+  await page.evaluate(() => window.scrollTo(0, 3000)); await wait(500)
+  await shot('05-health-supplements')
+
+  // 4. Goals — linked + long horizon
+  await tap('nav >> text=Goals'); await wait(700)
+  body = await text()
+  check('Weight plan created a linked Health goal', body.includes('reach 72 kg'))
+  check('Linked goal shows 5% (80 → 79.6 of 8 kg)', body.includes('5%'))
+  const addGoal = async ({ title, area, term, start, target, unit, deadline, link, ms = [] }) => {
+    await tap('[aria-label="Add goal"]'); await wait()
+    await page.fill('#goal-title', title)
+    await tap(`[role=dialog] button:has-text("${area}")`)
+    await tap(`[role=dialog] button:text-is("${term}")`)
+    if (link) await tap(`[role=dialog] button:text-is("${link}")`)
+    if (start != null) await page.fill('[aria-label="Starting value"]', String(start))
+    if (target != null) await page.fill('[aria-label="Target value"]', String(target))
+    if (unit) await page.fill('[aria-label="Unit"]', unit)
+    await page.fill('#goal-deadline', deadline)
+    for (const m of ms) { await page.fill('[aria-label="Add a milestone"]', m); await tap('[aria-label="Add milestone"]') }
+    await tap('[role=dialog] button:text-is("Create goal")'); await wait(600)
+  }
+  await addGoal({ title: 'Run 100 km', area: 'Health', term: 'Short term', link: 'Running distance', target: 100, deadline: '2027-02-25' })
+  await addGoal({ title: 'Emergency fund', area: 'Wealth', term: 'Long term', start: 0, target: 500000, unit: '₹', deadline: '2028-11-25' })
+  await addGoal({ title: 'Lead a major project', area: 'Work', term: 'Long term', deadline: '2027-11-25', ms: ['Pitch', 'Kick-off', 'Deliver'] })
+  body = await text()
+  check('Run goal picked up the logged 5.2 km', body.includes('5.2 of 100'))
+  await tap('button:text-is("Long term")'); await wait()
+  await tap('text=Emergency fund'); await wait()
+  await page.fill('[aria-label="Progress value"]', '150000'); await tap('[role=dialog] button:text-is("Update")'); await wait(400)
+  check('2-year savings goal at 30%', (await text()).includes('30%'))
+  await tap('[role=dialog] button:has-text("Set as focus")'); await wait(300)
+  await tap('[aria-label="Close"]'); await wait(400)
+  await tap('text=Lead a major project'); await wait()
+  for (const m of ['Pitch', 'Kick-off', 'Deliver']) { await tap(`[role=dialog] button:has-text("${m}")`); await wait(250) }
+  body = await text()
+  check('All milestones done marks goal achieved', body.includes('goal achieved') || body.includes('reopen goal'))
+  await tap('[aria-label="Close"]'); await wait(400)
+  await tap('button:text-is("Achieved")'); await wait()
+  check('Achieved tab lists completed goal', (await text()).includes('lead a major project'))
+  await tap('button:text-is("Long term")'); await wait()
+  await top(); await wait(300); await shot('06-goals')
+
+  // 5. Reminders + notifications
+  await tap('nav >> text=Today'); await wait(700)
+  body = await text()
+  check('Next reminder skips finished water and taken dose: 10:00 bill', /next reminder\s*\n?\s*10:00/.test(body), body.match(/next reminder\s*\n?.*\n?/)?.[0]?.replace(/\n/g, ' '))
+  check('Daily summary shows water 3.0L', body.includes('3.0l'))
+  check('Low stock alert on Today', body.includes('vitamin d3 runs out'))
+  check('Focus goal on Today', body.includes('emergency fund'))
+  await top(); await wait(300); await shot('07-today')
+  await page.evaluate(() => window.scrollTo(0, 800)); await wait(400)
+  await shot('08-today-scrolled')
+  await tap('[aria-label="Reminders"]'); await wait(600)
+  await tap('button:text-is("Turn on notifications")'); await wait(600)
+  check('Notifications turned on', (await text()).includes('phone notifications are on'))
+  await page.fill('[aria-label="Reminder text"]', 'Call parents'); await page.fill('[aria-label="Reminder time"]', '19:30')
+  await tap('[role=dialog] button:has-text("Add reminder")'); await wait(500)
+  check('Custom reminder listed', (await text()).includes('call parents'))
+  await shot('09-reminders')
+  await tap('[aria-label="Close"]'); await wait(300)
+  await page.clock.setFixedTime(new Date('2026-11-25T10:04:00+05:30')); await page.reload(); await wait(1500)
+  const notes = await page.evaluate(() => window.__notes)
+  check('At 10:04 the 10:00 bill reminder is sent as a phone notification', notes.some((n) => n.title === 'Pay credit card bill'), JSON.stringify(notes.map((n) => n.title)))
+  await page.reload(); await wait(1200)
+  const again = await page.evaluate(() => window.__notes)
+  check('The same reminder is not sent twice', !again.some((n) => n.title === 'Pay credit card bill'), JSON.stringify(again.map((n) => n.title)))
+  await page.evaluate(() => window.scrollTo(0, 0))
+
+  // 6. Dark mode + settings + backup
+  await tap('[aria-label="Settings"]'); await wait()
+  await tap('[role=dialog] button:has-text("Dark")'); await wait(300)
+  const dl = page.waitForEvent('download', { timeout: 5000 }).catch(() => null)
+  await tap('[role=dialog] button:has-text("Save backup")')
+  const d = await dl
+  check('Backup file downloads', d && /arise-backup-2026-11-25\.json/.test(d.suggestedFilename()), d?.suggestedFilename())
+  await tap('[aria-label="Close"]'); await wait(400)
+  await shot('10-today-dark')
+  await tap('nav >> text=Health'); await wait(800)
+  await shot('11-health-dark')
+  await tap('nav >> text=Goals'); await wait(600)
+  await shot('12-goals-dark')
+
+  // 7. Time travel: next day, +1 year, +2 years
+  const travel = async (iso, label) => {
+    await page.clock.setFixedTime(new Date(iso)); await page.goto(URL + '#tasks'); await page.reload(); await wait(900)
+    return text()
+  }
+  body = await travel('2026-11-26T08:00:00+05:30', 'next day')
+  check('Next day: daily task due again, not done', body.includes('morning meditation') && /0 of \d+ done today/.test(body))
+  check('Next day: overdue one-off flagged', body.includes('overdue'))
+  body = await travel('2027-11-25T08:00:00+05:30', '+1 year')
+  check('+1 year: app opens and daily task is due', body.includes('morning meditation'))
+  check('+1 year: monthly bill due on the 25th', body.includes('pay credit card bill'))
+  await page.goto(URL + '#goals'); await wait(800)
+  await tap('button:text-is("Long term")'); await wait()
+  body = await text()
+  check('+1 year: savings goal at 30% is behind pace', body.includes('behind pace'))
+  await shot('13-goals-1-year-later')
+  body = await travel('2028-11-26T08:00:00+05:30', '+2 years')
+  await page.goto(URL + '#goals'); await wait(800)
+  await tap('button:text-is("Long term")'); await wait()
+  body = await text()
+  check('+2 years: savings goal shows past deadline', body.includes('past deadline'))
+  await page.goto(URL + '#today'); await wait(800)
+  check('+2 years: Today screen renders', (await text()).includes('next action'))
+
+  // 8. Offline
+  await page.goto(URL); await wait(1500)
+  const swReady = await page.evaluate(async () => !!(await navigator.serviceWorker?.ready))
+  check('Service worker installed (offline support)', swReady)
+  await ctx.setOffline(true)
+  await page.reload(); await wait(1500)
+  check('Opens with no internet', (await text()).includes('next action'))
+  await ctx.setOffline(false)
+
+  // 9. Install manifest
+  const manifest = await page.evaluate(async () => (await fetch(document.querySelector('link[rel=manifest]').href)).json())
+  check('Manifest is installable (name, icons, standalone)', manifest.name === 'Arise' && manifest.display === 'standalone' && manifest.icons.length >= 3)
+
+  // 10. Layout: nothing wider than the phone
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  check('No sideways scrolling', overflow <= 0, `overflow ${overflow}px`)
+  const small = await page.evaluate(() => [...document.querySelectorAll('button')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.height < 32 || r.width < 32) }).map((b) => b.getAttribute('aria-label') || b.innerText).slice(0, 8))
+  check('Tap targets at least 32 px', small.length === 0, small.join(' | '))
+
+  check('No JavaScript errors', errors.length === 0, errors.slice(0, 3).join(' | '))
+  await browser.close()
+  const failed = results.filter((r) => !r.ok)
+  console.log(`\n${results.length - failed.length}/${results.length} checks passed on ${deviceName}`)
+  require('fs').writeFileSync(`${OUT}/${deviceName}-results.json`, JSON.stringify(results, null, 1))
+})().catch((e) => { console.error('CRASH', e.message); process.exit(1) })
