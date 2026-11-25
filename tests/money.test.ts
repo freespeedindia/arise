@@ -45,7 +45,7 @@ describe('money', () => {
 })
 
 describe('reports', () => {
-  const base: AllData = { tasks: [], goals: [], weights: [], water: [], food: [], activities: [], supplements: [], doses: [], transactions: [], holdings: [], liabilities: [], netWorth: [], reviews: [], focus: [] }
+  const base: AllData = { tasks: [], goals: [], weights: [], water: [], food: [], activities: [], supplements: [], doses: [], transactions: [], holdings: [], liabilities: [], netWorth: [], reviews: [], focus: [], docs: [] }
   it('ranges for day, week and month', () => {
     expect(rangeFor('daily', '2026-11-25')).toEqual(['2026-11-25', '2026-11-25'])
     expect(rangeFor('weekly', '2026-11-23')).toEqual(['2026-11-23', '2026-11-29'])

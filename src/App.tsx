@@ -12,6 +12,7 @@ import Goals from './screens/Goals'
 import Health, { type HealthAction } from './screens/Health'
 import Money, { type MoneyAction } from './screens/Money'
 import Welcome from './screens/Welcome'
+import Documents from './screens/Documents'
 import SettingsSheet from './screens/SettingsSheet'
 import RemindersSheet from './screens/RemindersSheet'
 import FocusScreen from './screens/FocusScreen'
@@ -20,7 +21,7 @@ import ExportSheet from './screens/ExportSheet'
 import { mmss, useFocus } from './lib/focus'
 import { Timer } from 'lucide-react'
 
-const TABS: Tab[] = ['today', 'tasks', 'goals', 'health', 'money']
+const TABS: Tab[] = ['today', 'tasks', 'goals', 'health', 'money', 'docs']
 const readHash = (): Tab => {
   const h = window.location.hash.replace('#', '') as Tab
   return TABS.includes(h) ? h : 'today'
@@ -78,6 +79,7 @@ export default function App() {
         {tab === 'tasks' && <Tasks today={today} />}
         {tab === 'goals' && <Goals />}
         {tab === 'health' && <Health s={settings} today={today} initial={healthAction} />}
+        {tab === 'docs' && <Documents s={settings} today={today} />}
         {tab === 'money' && <Money s={settings} today={today} initial={moneyAction} onOpenGoals={() => go('goals')} />}
       </motion.main>
       {focus.state && tab !== 'today' && (

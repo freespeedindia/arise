@@ -10,6 +10,7 @@ import { loadAll, periodSummary, type AllData } from './report'
 import { readSettings, type Settings } from './settings'
 import { isDoneNow, isDueToday, repeatLabel, streak } from './tasks'
 import { quoteOfTheDay } from '../data/quotes'
+import { expiryText } from './documents'
 
 export type ExportFormat = 'pdf' | 'xlsx'
 export interface ExportRange { from: string; to: string; title?: string }
@@ -130,7 +131,7 @@ function buildPdf(data: AllData, s: Settings, r: ExportRange): Blob {
     ['Weight', lw ? `${lw.kg.toFixed(1)} kg${s.targetWeight ? ` (target ${s.targetWeight} kg)` : ''}` : 'Not logged'],
     ['Workouts', `${sum.workouts} · ${sum.activeMin} min${sum.runKm ? ` · ${sum.runKm} km run` : ''}`],
     ['Income / spent', `${f(sum.income, true)} / ${f(sum.spent, true)}`], ['Saved', `${f(sum.saved, true)}${sum.income ? ` (${sum.rate}%)` : ''}`],
-    ['Focus time', `${Math.floor(sum.focusMin / 60)}h ${sum.focusMin % 60}m`], ['Water per day', `${sum.waterAvgL} L of ${(s.waterTargetMl / 1000).toFixed(1)} L`],
+    ['Focus time', `${Math.floor(sum.focusMin / 60)}h ${sum.focusMin % 60}m`], ['Water per day', `${sum.waterAvgL.toFixed(1)} L of ${(s.waterTargetMl / 1000).toFixed(1)} L`],
   ]
   const half = Math.ceil(snap.length / 2)
   table(['Measure', 'Value', 'Measure', 'Value'], Array.from({ length: half }, (_, i) => [snap[i][0], snap[i][1], snap[i + half]?.[0] ?? '', snap[i + half]?.[1] ?? '']), { widths: [82, 170, 82] })
@@ -174,6 +175,13 @@ function buildPdf(data: AllData, s: Settings, r: ExportRange): Blob {
   table(['Spending by category', 'Spent', 'Monthly limit'], cats.map(([c, v]) => [c, f(v), s.budgets[c] ? f(s.budgets[c]) : '']), { right: [1, 2] })
   table(['Asset', 'Type', 'Put in', 'Value', 'Gain'], [...data.holdings].sort((a, b) => b.current - a.current).map((h) => [h.name, h.kind, f(h.invested), f(h.current), h.invested ? `${gainPct(h).toFixed(1)}%` : '']), { right: [2, 3, 4] })
   if (data.liabilities.length) table(['Loan', 'Type', 'Owed', 'EMI'], data.liabilities.map((l) => [l.name, l.kind, f(l.outstanding), l.emi ? f(l.emi) : '']), { right: [2, 3] })
+
+  // Documents (details only; files stay on the phone)
+  if (data.docs.length) {
+    heading('Documents')
+    const sorted = [...data.docs].sort((a, b) => (a.expiresOn ?? '9').localeCompare(b.expiresOn ?? '9'))
+    table(['Document', 'Type', 'Number', 'Belongs to', 'Expires', 'Status'], sorted.map((x) => [x.title, x.kind, x.number ? `....${x.number.replace(/\s/g, '').slice(-4)}` : '', x.holder ?? '', x.expiresOn ? d(x.expiresOn) : 'No expiry', expiryText(x, todayKey())]), { widths: [100, 80, 60, 80, 70] })
+  }
 
   // 6. Daily rhythm
   heading('Daily rhythm and reminders')
@@ -261,6 +269,9 @@ async function buildXlsx(data: AllData, s: Settings, r: ExportRange): Promise<Bl
   add('Water', [H('Date', 'ml'), ...Object.entries(waterByDay).sort((a, b) => b[0].localeCompare(a[0])).map(([k, v]) => [S(k), N(v)])], [12, 10])
   add('Supplements', [H('Name', 'Dose', 'Times', 'Per dose', 'Stock', 'Days left', 'Active'), ...data.supplements.map((x) => [S(x.name), S(x.dose), S(x.times.join(', ')), N(x.perDose), N(x.stock), N(daysOfStock(x)), S(x.active ? 'Yes' : 'No')])], [22, 14, 16, 9, 8, 9, 7])
   add('Reviews', [H('Date', 'Type', 'Energy (1-5)', 'Went well', 'To improve', 'Priorities'), ...[...data.reviews].sort((a, b) => b.date.localeCompare(a.date)).map((v) => [S(v.date), S(v.kind), N(v.energy), S(v.wins), S(v.improve), S(v.tomorrow.join('; '))])], [12, 9, 11, 40, 40, 40])
+  add('Documents', [H('Document', 'Type', 'Number', 'Belongs to', 'Issued by', 'Issued on', 'Expires on', 'Status', 'Remind days before', 'Premium / fee', 'Notes'),
+    ...data.docs.map((x) => [S(x.title), S(x.kind), S(x.number), S(x.holder), S(x.issuer), S(x.issuedOn), S(x.expiresOn), S(expiryText(x, today)), N(x.remindDays), N(x.amount, AMT), S(x.notes)])],
+    [24, 16, 18, 16, 18, 12, 12, 20, 10, 12, 30])
   add('Focus', [H('Date', 'Minutes', 'Worked on'), ...[...data.focus].sort((a, b) => b.at.localeCompare(a.at)).map((x) => [S(x.date), N(x.minutes), S(x.label)])], [12, 9, 34])
 
   const blob = await (writeXlsxFile as unknown as (d: unknown, o: unknown) => Promise<Blob>)(sheets.map((x) => x.rows), {

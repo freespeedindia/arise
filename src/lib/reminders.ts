@@ -1,9 +1,10 @@
-import type { DoseLog, Goal, Reminder, Supplement, Task } from './db'
+import type { DocRecord, DoseLog, Goal, Reminder, Supplement, Task } from './db'
+import { expiryText, remindToday } from './documents'
 import { fromKey } from './dates'
 import type { Settings } from './settings'
 import { isDoneNow, isDueToday } from './tasks'
 
-export type ReminderKind = 'water' | 'run' | 'supplement' | 'task' | 'custom' | 'review' | 'goal-review'
+export type ReminderKind = 'water' | 'run' | 'supplement' | 'task' | 'custom' | 'review' | 'goal-review' | 'document'
 export interface ScheduledReminder { key: string; time: string; title: string; body: string; kind: ReminderKind; done?: boolean }
 
 const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
@@ -18,6 +19,7 @@ export interface ScheduleInput {
   reminders: Reminder[]
   goals: Goal[]
   waterMl: number
+  docs?: DocRecord[]
 }
 
 /** Everything that should remind you on a given date, in time order. */
@@ -61,6 +63,9 @@ export function buildSchedule(i: ScheduleInput): ScheduledReminder[] {
   }
   if (s.reviewTime && dow === s.reviewDay && i.goals.some((g) => !g.completedAt)) {
     out.push({ key: 'goal-review', time: s.reviewTime, kind: 'goal-review', title: 'Weekly goal review', body: 'Check each goal: on pace, behind, next milestone.' })
+  }
+  for (const d of i.docs ?? []) {
+    if (remindToday(d, date)) out.push({ key: `doc-${d.id}`, time: s.docReminderTime || '09:00', kind: 'document', title: `${d.title}: ${expiryText(d, date).toLowerCase()}`, body: d.expiresOn ? 'Open Documents in Arise to renew and update the date.' : '' })
   }
   return out.sort((a, b) => a.time.localeCompare(b.time))
 }
