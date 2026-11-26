@@ -39,6 +39,9 @@ jobs:
           xcrun simctl io "$DEV" screenshot shots/01-launch.png
           sleep 10
           xcrun simctl io "$DEV" screenshot shots/02-after-25s.png
+          # Fail if the app crashed instead of staying open
+          xcrun simctl spawn "$DEV" launchctl list | grep -q "UIKitApplication:in.freespeedindia.arise" || { echo "Arise is not running: it crashed on launch"; exit 1; }
+          echo "Arise is still running after 25 seconds"
           # Small copy printed into the log too, so it can be viewed without downloading
           sips -s format jpeg -s formatOptions 70 -Z 900 shots/02-after-25s.png --out shots/small.jpg >/dev/null
           echo "SHOT-BEGIN"; base64 -i shots/small.jpg | tr -d '\n'; echo; echo "SHOT-END"
