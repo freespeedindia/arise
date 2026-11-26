@@ -21,6 +21,7 @@ jobs:
       - name: Build for the iPhone Simulator
         run: |
           set -o pipefail
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           xcodebuild -version
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
