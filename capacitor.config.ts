@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 // Settings for the native iPhone app (the ios/ folder). See IPHONE.md.
 const config: CapacitorConfig = {
-  appId: 'in.freespeedindia.arise',
+  appId: 'com.freespeedindia.arise',
   appName: 'Arise',
   webDir: 'dist',
   backgroundColor: '#F7F2E9',

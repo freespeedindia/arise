@@ -12,7 +12,7 @@ export default function Welcome() {
   return (
     <div className="flex min-h-full flex-col justify-between bg-bg px-7 pb-10 safe-top">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mt-16">
-        <Logo size={56} className="text-saffron" />
+        <Logo size={84} />
         <h1 className="mt-6 font-serif text-[44px] font-semibold leading-none tracking-tight">Arise</h1>
         <p className="mt-2 text-[15px] text-muted">A planner for goals, health and money.</p>
         <div className="mt-12 border-l-2 border-gold pl-4">

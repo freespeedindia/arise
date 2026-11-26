@@ -22,7 +22,7 @@ This folder holds Arise as a native iPhone app. You open it in Xcode on a Mac an
 - Tick **Automatically manage signing**.
 - Under **Team**, choose **Add an Account…** and sign in with your Apple ID.
 - Pick the team named **Your Name (Personal Team)**.
-- If a red message says the bundle identifier is "not available", change **Bundle Identifier** to something unique, such as `in.guruprasad.arise`, and press Enter.
+- If a red message says the bundle identifier is "not available", change **Bundle Identifier** to something unique, such as `com.freespeedindia.arise2`, and press Enter.
 
 **3. Connect your iPhone**
 - Plug the iPhone into the Mac and unlock it. If the phone asks, tap **Trust This Computer**.
@@ -55,6 +55,17 @@ Once everything is there, you can delete the old Safari icon if you like. Press 
 - **Sharing and saving.** Export, backup and document sharing open the normal iPhone share sheet. From there you can use Mail, WhatsApp, or **Save to Files**.
 - **Updates.** When Arise gets a new version, you'll receive a new zip. Open it the same way and press Play. Use the same Bundle Identifier as before and your data is kept.
 - **Your data stays on your phone.** Nothing is uploaded anywhere.
+
+## Publishing through Free Speed Private Limited
+
+The app is set up for the company. Its app ID is `com.freespeedindia.arise`, and its copyright line reads "© Free Speed Private Limited". To put it on the App Store or TestFlight under the company name:
+
+1. The company needs an **Apple Developer Program** membership as an organisation (USD 99 a year). Apple asks for the company's **D-U-N-S number**, which is free to get. Enrolment is done by you at developer.apple.com.
+2. In Xcode, under **Signing & Capabilities**, choose the **Free Speed Private Limited** team instead of your Personal Team.
+3. Choose **Any iOS Device** at the top. Then, in the top menu, choose **Product**, then **Archive**, then **Distribute App**, then **App Store Connect**.
+4. In App Store Connect, create the app with the same app ID. The seller name shown on the App Store will be Free Speed Private Limited.
+
+Claude won't sign up for or use these accounts for you. Ask when you get there, and you'll be walked through each screen.
 
 ## If something goes wrong
 
