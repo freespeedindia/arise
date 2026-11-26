@@ -53,7 +53,7 @@ export default function FocusScreen({ open, onClose, s, today, focus }: {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div role="dialog" aria-label="Focus mode" className="fixed inset-0 z-50 overflow-y-auto bg-[#1C1612] text-[#F7F2E9]"
+        <motion.div role="dialog" aria-label="Focus mode" className="fixed inset-0 z-50 overflow-y-auto bg-[#2A2826] text-[#F7F2E9]"
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 34, stiffness: 320 }}>
           <div className="mx-auto flex min-h-full max-w-lg flex-col px-6 pb-10 safe-top">
             <div className="mt-2 flex items-center justify-between">
@@ -64,7 +64,7 @@ export default function FocusScreen({ open, onClose, s, today, focus }: {
             <div className="mt-8 flex flex-col items-center">
               <Ring pct={pct} size={236} stroke={6} color={state?.phase === 'break' ? 'rgb(110 176 128)' : 'rgb(226 132 54)'} track="rgba(255,255,255,0.08)">
                 <div className="text-center">
-                  <p className="num font-serif text-[56px] font-semibold leading-none" aria-live="polite">{mmss(running ? left : mins * 60000)}</p>
+                  <p className="num font-display text-[56px] font-medium leading-none" aria-live="polite">{mmss(running ? left : mins * 60000)}</p>
                   <p className="mt-2 text-xs text-[#F7F2E9]/60">{state?.pausedLeft != null ? 'Paused' : running ? (state!.phase === 'break' ? 'Stand up, stretch, breathe' : state!.label || 'Deep work') : `${mins} minutes`}</p>
                 </div>
               </Ring>
@@ -123,8 +123,8 @@ export default function FocusScreen({ open, onClose, s, today, focus }: {
             )}
 
             <div className="mt-8 grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-xl bg-white/5 py-3"><p className="num font-serif text-xl font-semibold">{fmtH(todayMin)}</p><p className="text-2xs uppercase tracking-[0.1em] text-[#F7F2E9]/50">Today</p></div>
-              <div className="rounded-xl bg-white/5 py-3"><p className="num font-serif text-xl font-semibold">{fmtH(weekMin)}</p><p className="text-2xs uppercase tracking-[0.1em] text-[#F7F2E9]/50">This week</p></div>
+              <div className="rounded-xl bg-white/5 py-3"><p className="num font-display text-xl font-medium">{fmtH(todayMin)}</p><p className="text-2xs uppercase tracking-[0.1em] text-[#F7F2E9]/50">Today</p></div>
+              <div className="rounded-xl bg-white/5 py-3"><p className="num font-display text-xl font-medium">{fmtH(weekMin)}</p><p className="text-2xs uppercase tracking-[0.1em] text-[#F7F2E9]/50">This week</p></div>
             </div>
             <blockquote className="mt-8 border-l-2 border-[#CDA85C] pl-4">
               <p className="font-serif text-[16px] italic leading-relaxed text-[#F7F2E9]/85">{quote.text}</p>

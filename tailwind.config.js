@@ -7,7 +7,7 @@ export default {
     extend: {
       colors: {
         // Semantic surfaces (switch with light/dark mode)
-        bg: v('bg'), surface: v('surface'), sunken: v('sunken'), line: v('line'),
+        bg: v('bg'), surface: v('surface'), hero: v('hero'), sunken: v('sunken'), line: v('line'),
         ink: v('ink'), muted: v('muted'), faint: v('faint'),
         // Brand — matte tones
         saffron: { DEFAULT: v('saffron'), soft: v('saffron-soft'), deep: v('saffron-deep') },
@@ -18,10 +18,11 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'], // quotes only
+        display: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       borderRadius: { xl: '14px', '2xl': '18px' },
-      boxShadow: { card: '0 1px 2px rgb(34 27 21 / 0.04), 0 4px 16px -8px rgb(34 27 21 / 0.08)' },
+      boxShadow: { card: '0 1px 2px rgb(40 36 30 / 0.035)' },
       fontSize: { '2xs': ['11px', '14px'] },
     },
   },

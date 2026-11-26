@@ -42,7 +42,7 @@ export default function WeightCard({ s, today, openLog, setOpenLog }: { s: Setti
       <div className="flex items-start justify-between">
         <div>
           <p className="eyebrow flex items-center gap-1.5"><Scale size={13} />Weight</p>
-          <p className="num mt-1 font-serif text-[32px] font-semibold leading-none">{latest ? latest.kg.toFixed(1) : '—'}<span className="ml-1 font-sans text-base font-medium text-muted">kg</span></p>
+          <p className="num mt-1 font-display text-[32px] font-medium leading-none">{latest ? latest.kg.toFixed(1) : '—'}<span className="ml-1 font-sans text-base font-medium text-muted">kg</span></p>
           <p className="mt-1.5 text-xs text-muted">
             {latest ? `Logged ${friendlyDate(latest.date).toLowerCase()}` : 'No entries yet'}
             {bmi(latest?.kg, s.heightCm) ? ` · BMI ${bmi(latest?.kg, s.heightCm)}` : ''}

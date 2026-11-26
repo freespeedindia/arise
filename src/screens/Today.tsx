@@ -117,10 +117,9 @@ export default function Today({ s, today: t, schedule, onNavigate, onOpenSetting
       </div>
 
       {/* Next action */}
-      <motion.div initial={{ y: 6 }} animate={{ y: 0 }} className="relative mt-5 overflow-hidden rounded-2xl bg-[#241C16] p-5 text-[#F7F2E9] dark:border dark:border-line dark:bg-surface">
-        <span className="absolute inset-y-0 left-0 w-1 bg-saffron" />
+      <motion.div initial={{ y: 6 }} animate={{ y: 0 }} className="relative mt-5 overflow-hidden rounded-[22px] bg-hero p-6 text-[#F1EEE8] dark:bg-surface">
         <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-gold">Next action</p>
-        <p className="mt-2 font-serif text-[24px] font-semibold leading-snug">{act.title}</p>
+        <p className="mt-2 font-display text-[24px] font-medium leading-snug">{act.title}</p>
         <p className="mt-1 text-sm opacity-70">{act.sub}</p>
         <button onClick={act.run} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-saffron px-4 py-2.5 text-sm font-semibold text-white">{act.label}<ArrowRight size={16} /></button>
       </motion.div>
@@ -231,7 +230,7 @@ function Metric({ label, value, pct, color, Icon, onClick }: { label: string; va
 }
 function Quick({ Icon, label, onClick }: { Icon: typeof Droplet; label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1 rounded-xl border border-line bg-surface py-2.5 text-xs font-medium text-muted active:scale-[0.97]">
+    <button onClick={onClick} className="flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl bg-surface py-2.5 text-xs font-medium text-muted active:scale-[0.97]">
       <Icon size={18} strokeWidth={1.75} className="text-ink" />{label}
     </button>
   )

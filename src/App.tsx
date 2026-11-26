@@ -54,7 +54,7 @@ export default function App() {
     const apply = () => {
       const dark = settings.theme === 'dark' || (settings.theme === 'system' && mq.matches)
       document.documentElement.classList.toggle('dark', dark)
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#16120F' : '#F7F2E9')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1E1D1B' : '#E8E4DC')
     }
     apply()
     mq.addEventListener('change', apply)
@@ -83,7 +83,7 @@ export default function App() {
         {tab === 'money' && <Money s={settings} today={today} initial={moneyAction} onOpenGoals={() => go('goals')} />}
       </motion.main>
       {focus.state && tab !== 'today' && (
-        <button onClick={() => setFocusOpen(true)} className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-4 z-30 inline-flex items-center gap-2 rounded-full bg-[#241C16] px-4 py-2.5 text-sm font-semibold text-[#F7F2E9] shadow-card">
+        <button onClick={() => setFocusOpen(true)} className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-4 z-30 inline-flex items-center gap-2 rounded-full bg-hero px-4 py-2.5 text-sm font-semibold text-[#F7F2E9] shadow-card">
           <Timer size={16} className="text-[#E28436]" /><span className="num">{mmss(focus.left)}</span>{focus.state.phase === 'break' ? 'break' : 'focus'}
         </button>
       )}

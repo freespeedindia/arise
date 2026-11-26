@@ -38,7 +38,7 @@ export default function Goals() {
           return (
             <button key={a} onClick={() => setArea(area === a ? 'All' : a)} className={`px-2 py-3 text-center ${area === a ? areaStyle[a].soft : ''}`}>
               <p className={`text-2xs font-semibold uppercase tracking-[0.1em] ${areaStyle[a].text}`}>{a}</p>
-              <p className="num mt-1 font-serif text-xl font-semibold">{gs.length ? `${p}%` : '—'}</p>
+              <p className="num mt-1 font-display text-xl font-medium">{gs.length ? `${p}%` : '—'}</p>
               <p className="text-2xs text-muted">{gs.length} {gs.length === 1 ? 'goal' : 'goals'}</p>
             </button>
           )
@@ -59,7 +59,7 @@ export default function Goals() {
         {list.length === 0 && (
           <div className="card flex flex-col items-center px-6 py-10 text-center">
             <Target size={28} strokeWidth={1.5} className="text-faint" />
-            <p className="mt-3 font-serif text-lg">{term === 'done' ? 'Achieved goals appear here' : 'Set a goal with a deadline'}</p>
+            <p className="mt-3 font-display text-lg">{term === 'done' ? 'Achieved goals appear here' : 'Set a goal with a deadline'}</p>
             <p className="mt-1 text-sm text-muted">Tap + to create one.</p>
           </div>
         )}

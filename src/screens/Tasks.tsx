@@ -49,7 +49,7 @@ export default function Tasks({ today: t }: { today: string }) {
         {list.length === 0 && (
           <div className="card flex flex-col items-center px-6 py-10 text-center">
             <ListChecks size={28} strokeWidth={1.5} className="text-faint" />
-            <p className="mt-3 font-serif text-lg">{filter === 'today' ? 'Nothing left for today' : 'Nothing here yet'}</p>
+            <p className="mt-3 font-display text-lg">{filter === 'today' ? 'Nothing left for today' : 'Nothing here yet'}</p>
             <p className="mt-1 text-sm text-muted">Tap + to add a task.</p>
           </div>
         )}

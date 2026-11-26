@@ -1,7 +1,7 @@
 {
   "name": "arise",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Arise: a planner for goals, health, money and documents.",
   "author": "Free Speed Private Limited",
   "type": "module",

@@ -12,7 +12,7 @@ const TABS = [
 
 export default function BottomNav({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur safe-bottom">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-bg/90 backdrop-blur safe-bottom">
       <div className="mx-auto flex max-w-lg px-1">
         {TABS.map(({ id, label, Icon }) => {
           const active = id === tab

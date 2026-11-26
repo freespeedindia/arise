@@ -79,7 +79,7 @@ export default function Money({ s, today, initial, onOpenGoals }: { s: Settings;
 
       {empty && (
         <div className="card mt-5 p-5">
-          <p className="font-serif text-lg font-semibold">Start with where you stand</p>
+          <p className="font-display text-lg font-medium">Start with where you stand</p>
           <ol className="mt-2 space-y-1.5 text-sm text-muted">
             <li>1. Add your bank balances, investments and gold under Assets.</li>
             <li>2. Add any loans or card balances.</li>
@@ -93,7 +93,7 @@ export default function Money({ s, today, initial, onOpenGoals }: { s: Settings;
       {/* Net worth */}
       <div className="card mt-5 p-4">
         <p className="eyebrow flex items-center gap-1.5"><Landmark size={13} />Net worth</p>
-        <p className={`num mt-1 font-serif text-[34px] font-semibold leading-none ${t.net < 0 ? 'text-crimson' : ''}`}>{f(t.net)}</p>
+        <p className={`num mt-1 font-display text-[34px] font-medium leading-none ${t.net < 0 ? 'text-crimson' : ''}`}>{f(t.net)}</p>
         <p className="num mt-1.5 text-xs text-muted">
           {change30 != null ? <span className={change30 >= 0 ? 'text-forest' : 'text-crimson'}>{f(change30, { sign: true })} in 30 days · </span> : null}
           Assets {f(t.assets, { compact: true })} · Owed {f(t.debt, { compact: true })}
@@ -242,7 +242,7 @@ export default function Money({ s, today, initial, onOpenGoals }: { s: Settings;
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="eyebrow flex items-center gap-1.5"><Wallet size={13} />Total value</p>
-              <p className="num mt-1 font-serif text-2xl font-semibold">{f(t.assets)}</p>
+              <p className="num mt-1 font-display text-2xl font-medium">{f(t.assets)}</p>
             </div>
             {t.invested > 0 && (
               <div className="text-right">

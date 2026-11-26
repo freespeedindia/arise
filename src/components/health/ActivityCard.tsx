@@ -55,7 +55,7 @@ export default function ActivityCard({ today, openLog, setOpenLog }: { today: st
   )
 }
 const Stat = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl bg-sunken px-3 py-2"><p className="num font-serif text-xl font-semibold">{value}</p><p className="text-2xs text-muted">{label}</p></div>
+  <div className="rounded-xl bg-sunken px-3 py-2"><p className="num font-display text-xl font-medium">{value}</p><p className="text-2xs text-muted">{label}</p></div>
 )
 
 function LogActivity({ open, onClose, today }: { open: boolean; onClose: () => void; today: string }) {

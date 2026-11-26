@@ -57,7 +57,7 @@ export default function GoalDetail({ goal, onClose, onEdit }: { goal: Goal | nul
       <div className="space-y-6">
         <div className="flex items-center gap-5">
           <Ring pct={pct} size={92} stroke={7} color={st.color}>
-            <span className="num font-serif text-2xl font-semibold">{pct}%</span>
+            <span className="num font-display text-2xl font-medium">{pct}%</span>
           </Ring>
           <div className="space-y-1 text-sm">
             <p className={`flex items-center gap-1.5 font-semibold ${st.text}`}><AreaIcon area={goal.area} size={15} />{goal.area} · {goal.term === 'short' ? 'Short term' : 'Long term'}</p>

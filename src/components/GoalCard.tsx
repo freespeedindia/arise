@@ -34,7 +34,7 @@ export default function GoalCard({ goal, onOpen }: { goal: Goal; onOpen: (g: Goa
             {goal.focus && <Star size={12} className="ml-1 fill-gold text-gold" aria-label="Focus goal" />}
             {goal.link && <Link2 size={12} className="text-muted" aria-label="Updates automatically" />}
           </div>
-          <p className="mt-1.5 font-serif text-[19px] font-semibold leading-snug">{goal.title}</p>
+          <p className="mt-1.5 font-display text-[19px] font-medium leading-snug">{goal.title}</p>
           {value && <p className="num mt-1 text-sm text-muted">{value}</p>}
           <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
             <span className={`font-semibold ${paceTone[pace]}`}>{paceLabel[pace]}</span>

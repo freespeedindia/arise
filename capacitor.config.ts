@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appId: 'com.freespeedindia.arise',
   appName: 'Arise',
   webDir: 'dist',
-  backgroundColor: '#F7F2E9',
-  ios: { contentInset: 'never', backgroundColor: '#F7F2E9' },
+  backgroundColor: '#E8E4DC',
+  ios: { contentInset: 'never', backgroundColor: '#E8E4DC' },
   plugins: {
     LocalNotifications: { iconColor: '#CF6D1E' },
   },
