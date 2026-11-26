@@ -47,9 +47,10 @@ if (fs.existsSync(lnp)) {
 }
 
 // Version shown on the iPhone = package.json version
-const pbx = 'ios/App/App.xcodeproj/project.pbxproj'
+const pbx = 'ios/App/Arise.xcodeproj/project.pbxproj'
 fs.writeFileSync(pbx, fs.readFileSync(pbx, 'utf8')
   .replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${pkg.version};`)
+  .replace(/PRODUCT_NAME = [^;]+;/g, 'PRODUCT_NAME = Arise;')
   .replace(/IPHONEOS_DEPLOYMENT_TARGET = [^;]+;/g, `IPHONEOS_DEPLOYMENT_TARGET = ${IOS_MIN}.0;`))
 console.log(`\niOS project ready (Arise ${pkg.version}).`)
 
@@ -58,11 +59,12 @@ if (zi > 0) {
   const out = path.resolve(process.argv[zi + 1])
   fs.mkdirSync(out, { recursive: true })
   const stage = fs.mkdtempSync('/tmp/arise-ios-')
-  const top = `${stage}/Arise-iPhone`
+  const name = `Arise-iPhone-${pkg.version}`
+  const top = `${stage}/${name}`
   fs.cpSync('ios', `${top}/ios`, { recursive: true, filter: (p) => !/xcuserdata|DerivedData|\/build$|\.DS_Store/.test(p) })
   fs.copyFileSync('IPHONE.md', `${top}/READ ME FIRST.md`)
-  const zip = `${out}/Arise-iPhone-${pkg.version}.zip`
+  const zip = `${out}/${name}.zip`
   fs.rmSync(zip, { force: true })
-  run(`cd "${stage}" && zip -qr -X "${zip}" Arise-iPhone`)
+  run(`cd "${stage}" && zip -qr -X -y "${zip}" "${name}"`)
   console.log(`Wrote ${zip}`)
 }

@@ -12,14 +12,13 @@ This folder holds Arise as a native iPhone app. You open it in Xcode on a Mac an
 ## One-time setup (about 15 minutes)
 
 **1. Open the project**
-- Double-click `Arise-iPhone-<version>.zip` to unzip it.
-- Open the folder **Arise-iPhone**, then **ios**, then **App**.
-- Double-click **App.xcodeproj**. Xcode opens.
+- Double-click `Arise-iPhone-<version>.zip` to unzip it. You get a folder with the same name, such as **Arise-iPhone-0.4.1**. Each version has its own folder name, so a new download never mixes with an old one.
+- Open that folder, then **ios**, then **App**, and double-click **Arise.xcodeproj** (the blue icon). Xcode opens.
 - Wait until the bar at the top stops saying "Fetching" or "Resolving packages". The first time, this takes 1 to 3 minutes.
 
 **2. Sign the app with your Apple ID**
-- In the left column, click the blue **App** icon at the very top.
-- In the middle area, under **TARGETS**, click **App**. Then open the **Signing & Capabilities** tab.
+- In the left column, click the blue **Arise** icon at the very top.
+- In the middle area, under **TARGETS**, click **Arise**. Then open the **Signing & Capabilities** tab.
 - Tick **Automatically manage signing**.
 - Under **Team**, choose **Add an Account…** and sign in with your Apple ID.
 - Pick the team named **Your Name (Personal Team)**.

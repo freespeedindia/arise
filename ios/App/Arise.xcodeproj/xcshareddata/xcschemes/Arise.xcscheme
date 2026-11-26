@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "504EC3031FED79650016851F"
-               BuildableName = "App.app"
-               BlueprintName = "App"
-               ReferencedContainer = "container:App.xcodeproj">
+               BuildableName = "Arise.app"
+               BlueprintName = "Arise"
+               ReferencedContainer = "container:Arise.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -43,9 +43,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "504EC3031FED79650016851F"
-            BuildableName = "App.app"
-            BlueprintName = "App"
-            ReferencedContainer = "container:App.xcodeproj">
+            BuildableName = "Arise.app"
+            BlueprintName = "Arise"
+            ReferencedContainer = "container:Arise.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -60,9 +60,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "504EC3031FED79650016851F"
-            BuildableName = "App.app"
-            BlueprintName = "App"
-            ReferencedContainer = "container:App.xcodeproj">
+            BuildableName = "Arise.app"
+            BlueprintName = "Arise"
+            ReferencedContainer = "container:Arise.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
