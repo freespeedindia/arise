@@ -21,7 +21,7 @@ export default defineConfig({
         short_name: 'Arise',
         description: 'Arise, awake, and stop not till the goal is reached.',
         theme_color: '#CF6D1E',
-        background_color: '#F7F2E9',
+        background_color: '#E8E4DC',
         display: 'standalone',
         orientation: 'portrait',
         start_url: base,

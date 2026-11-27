@@ -1,0 +1,51 @@
+name: iPhone app build check
+
+# Builds the Xcode project on a Mac (for the iPhone Simulator, no signing needed),
+# opens Arise in the simulator and saves screenshots, so every change to ios/ is proven to compile.
+on:
+  push:
+    branches: [ios-app]
+  pull_request:
+    paths: ['ios/**', 'src/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the iPhone Simulator
+        run: |
+          set -o pipefail
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcodebuild -version
+          xcodebuild -project ios/App/Arise.xcodeproj -scheme Arise -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -40
+          test -d build/Build/Products/Debug-iphonesimulator/Arise.app
+      - name: Run in the simulator and take screenshots
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone 16') or x['name'].startswith('iPhone 15')))")
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl install "$DEV" build/Build/Products/Debug-iphonesimulator/Arise.app
+          xcrun simctl launch "$DEV" com.freespeedindia.arise
+          mkdir -p shots
+          sleep 15
+          xcrun simctl io "$DEV" screenshot shots/01-launch.png
+          sleep 10
+          xcrun simctl io "$DEV" screenshot shots/02-after-25s.png
+          # Fail if the app crashed instead of staying open
+          xcrun simctl spawn "$DEV" launchctl list | grep -q "UIKitApplication:com.freespeedindia.arise" || { echo "Arise is not running: it crashed on launch"; exit 1; }
+          echo "Arise is still running after 25 seconds"
+          # Small copy printed into the log too, so it can be viewed without downloading
+          sips -s format jpeg -s formatOptions 70 -Z 900 shots/02-after-25s.png --out shots/small.jpg >/dev/null
+          echo "SHOT-BEGIN"; base64 -i shots/small.jpg | tr -d '\n'; echo; echo "SHOT-END"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-simulator-screenshots
+          path: shots

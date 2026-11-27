@@ -83,7 +83,7 @@ export default function Documents({ s, today }: { s: Settings; today: string }) 
       <div className="card mt-5 grid grid-cols-3 divide-x divide-line">
         {([[null, 'Stored', docs.length, ''], ['soon', 'Expiring soon', soon, 'text-saffron-deep'], ['expired', 'Expired', expired, 'text-crimson']] as const).map(([k, l, n, tone]) => (
           <button key={l} onClick={() => setStatusF(statusF === k ? null : k)} className={`px-2 py-3 text-center ${statusF === k && k ? 'bg-sunken' : ''}`}>
-            <p className={`num font-serif text-2xl font-semibold ${n ? tone : ''}`}>{n}</p>
+            <p className={`num font-display text-2xl font-medium ${n ? tone : ''}`}>{n}</p>
             <p className="text-2xs uppercase tracking-[0.08em] text-muted">{l}</p>
           </button>
         ))}
@@ -122,7 +122,7 @@ export default function Documents({ s, today }: { s: Settings; today: string }) 
 
       {docs.length === 0 && (
         <div className="card mt-2 p-5">
-          <p className="font-serif text-lg font-semibold">Keep every important document in one place</p>
+          <p className="font-display text-lg font-medium">Keep every important document in one place</p>
           <p className="mt-1 text-sm text-muted">Add the details and a PDF or photo. Arise reminds you before anything expires. Files stay on this phone.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {STARTERS.filter((k) => s.docKinds.includes(k)).map((k) => (

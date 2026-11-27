@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import type { ScheduledReminder } from './reminders'
 import { nowHHMM, toMin } from './reminders'
 import { QUOTES } from '../data/quotes'
+import { isNative, nativeBook, nativeCancelAll, nativePermission, nativeRequest, nativeShowNow } from './native'
+import { upcomingSchedules } from './useSchedule'
 
 /**
  * Shows phone notifications for reminders while Arise is open or recently used.
@@ -15,10 +17,15 @@ const saveFired = (date: string, s: Set<string>) => {
   try { localStorage.setItem(firedKey(date), JSON.stringify([...s])) } catch { /* storage unavailable */ }
 }
 
-export const notificationsSupported = () => typeof window !== 'undefined' && 'Notification' in window
-export const notificationPermission = () => (notificationsSupported() ? Notification.permission : 'unsupported')
+export const notificationsSupported = () => isNative() || (typeof window !== 'undefined' && 'Notification' in window)
+// In the iPhone app the real answer comes from iOS (async); this cached copy keeps the screens simple.
+let nativePerm: NotificationPermission = 'default'
+if (isNative()) nativePermission().then((p) => (nativePerm = p)).catch(() => {})
+export const notificationPermission = () => (isNative() ? nativePerm : notificationsSupported() ? Notification.permission : 'unsupported')
+export async function refreshPermission() { if (isNative()) nativePerm = await nativePermission().catch(() => nativePerm); return notificationPermission() }
 
 export async function requestNotifications(): Promise<boolean> {
+  if (isNative()) { const ok = await nativeRequest(); nativePerm = ok ? 'granted' : 'denied'; return ok }
   if (!notificationsSupported()) return false
   const p = await Notification.requestPermission()
   return p === 'granted'
@@ -26,6 +33,7 @@ export async function requestNotifications(): Promise<boolean> {
 
 export async function showNotification(title: string, body: string, tag?: string) {
   if (notificationPermission() !== 'granted') return
+  if (isNative()) { await nativeShowNow(title, body, tag).catch(() => {}); return }
   const icon = `${import.meta.env.BASE_URL}icon-192.png`
   try {
     const reg = await navigator.serviceWorker?.getRegistration()
@@ -41,8 +49,18 @@ export function dueNow(list: ScheduledReminder[], now: string, fired: Set<string
 }
 
 export function useNotifier(date: string, schedule: ScheduledReminder[] | undefined, enabled: boolean) {
+  // iPhone app: book the next three days with iOS, so reminders arrive with Arise closed.
   useEffect(() => {
-    if (!enabled || !schedule) return
+    if (!isNative()) return
+    if (!enabled) { nativeCancelAll().catch(() => {}); return }
+    if (!schedule) return
+    const t = setTimeout(() => {
+      upcomingSchedules(date, 3).then((rest) => nativeBook([{ date, list: schedule }, ...rest])).catch(() => {})
+    }, 800)
+    return () => clearTimeout(t)
+  }, [date, schedule, enabled])
+  useEffect(() => {
+    if (isNative() || !enabled || !schedule) return
     const tick = () => {
       const fired = getFired(date)
       const due = dueNow(schedule, nowHHMM(), fired)

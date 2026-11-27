@@ -1,4 +1,4 @@
-import { Download, Monitor, Moon, Share2, Sun, Upload } from 'lucide-react'
+import { ChevronRight, Download, FolderLock, Monitor, Moon, Share2, Sun, Timer, Upload } from 'lucide-react'
 import { openExport } from './ExportSheet'
 import Sheet from '../components/Sheet'
 import { setSetting, type Settings, type ThemePref } from '../lib/settings'
@@ -7,15 +7,29 @@ import { QUOTES } from '../data/quotes'
 import { exportData, importData } from '../lib/backup'
 import { toast } from '../lib/celebrate'
 
-export default function SettingsSheet({ open, onClose, settings }: { open: boolean; onClose: () => void; settings: Settings }) {
+export default function SettingsSheet({ open, onClose, settings, onOpenDocs, onOpenFocus }: { open: boolean; onClose: () => void; settings: Settings; onOpenDocs: () => void; onOpenFocus: () => void }) {
   const install = useInstall()
   const themes: [ThemePref, string, typeof Sun][] = [['light', 'Light', Sun], ['dark', 'Dark', Moon], ['system', 'Auto', Monitor]]
   return (
     <Sheet open={open} onClose={onClose} title="Settings">
       <div className="space-y-7">
-        <div>
-          <label className="label" htmlFor="set-name">Your name</label>
-          <input id="set-name" className="input" defaultValue={settings.name} onBlur={(e) => setSetting('name', e.target.value.trim())} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label" htmlFor="set-name">Your name</label>
+            <input id="set-name" className="input" defaultValue={settings.name} onBlur={(e) => setSetting('name', e.target.value.trim())} />
+          </div>
+          <div>
+            <label className="label" htmlFor="set-child">Daughter's name</label>
+            <input id="set-child" className="input" defaultValue={settings.childName} onBlur={(e) => setSetting('childName', e.target.value.trim() || 'Devi')} />
+          </div>
+        </div>
+        <div className="card divide-y divide-line bg-sunken shadow-none">
+          <button onClick={onOpenDocs} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+            <FolderLock size={18} className="text-muted" /><span className="flex-1"><span className="block text-[15px] font-medium">Documents</span><span className="text-xs text-muted">IDs, insurance and renewals</span></span><ChevronRight size={16} className="text-faint" />
+          </button>
+          <button onClick={onOpenFocus} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+            <Timer size={18} className="text-muted" /><span className="flex-1"><span className="block text-[15px] font-medium">Focus mode</span><span className="text-xs text-muted">A timer for deep work, without distractions</span></span><ChevronRight size={16} className="text-faint" />
+          </button>
         </div>
         <div>
           <span className="label">Appearance</span>
@@ -52,7 +66,7 @@ export default function SettingsSheet({ open, onClose, settings }: { open: boole
             </label>
           </div>
         </div>
-        <p className="text-center text-xs text-faint">Arise {__APP_VERSION__} · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device</p>
+        <p className="text-center text-xs text-faint">Arise {__APP_VERSION__} · {QUOTES.length} quotes of Swami Vivekananda · Data stored on this device<br />© {new Date().getFullYear()} Free Speed Private Limited</p>
       </div>
     </Sheet>
   )

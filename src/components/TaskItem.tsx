@@ -1,17 +1,21 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, Calendar, Check, ChevronDown, Clock, Flame, ListTodo, MoreHorizontal, Repeat } from 'lucide-react'
+import { AlertCircle, Calendar, Check, ChevronDown, Clock, CornerDownRight, Flame, ListTodo, MoreHorizontal, Repeat, Target } from 'lucide-react'
 import { useState } from 'react'
-import { db, type Task } from '../lib/db'
+import { db, type Priority, type Task } from '../lib/db'
 import { friendlyDate } from '../lib/dates'
 import { isDoneNow, isOverdue, repeatLabel, streak, streakUnit, toggleTask } from '../lib/tasks'
 import { celebrate } from '../lib/celebrate'
-import { areaStyle } from '../lib/goals'
+import { RAG } from '../lib/day'
+import { nowHHMM } from '../lib/reminders'
 
-const prio = { 1: 'bg-crimson', 2: 'bg-gold', 3: 'bg-faint' } as const
-const prioName = { 1: 'High priority', 2: 'Medium priority', 3: 'Low priority' } as const
-
-export default function TaskItem({ task, onEdit, today }: { task: Task; onEdit?: (t: Task) => void; today?: string }) {
-  const done = isDoneNow(task, today)
+export default function TaskItem({ task, onEdit, today, done: doneProp, carried, goalName, isToday }: {
+  task: Task; onEdit?: (t: Task) => void; today?: string; done?: boolean; carried?: boolean; goalName?: string; isToday?: boolean
+}) {
+  const done = doneProp ?? isDoneNow(task, today)
+  const [moving, setMoving] = useState(false)
+  const rag = RAG[task.priority]
+  const late = isToday && !done && rag.by && nowHHMM() >= rag.by
+  const moveTo = async (p: Priority) => { setMoving(false); if (task.id != null && p !== task.priority) await db.tasks.update(task.id, { priority: p }) }
   const s = streak(task, today)
   const overdue = isOverdue(task, today)
   const [open, setOpen] = useState(false)
@@ -35,18 +39,19 @@ export default function TaskItem({ task, onEdit, today }: { task: Task; onEdit?:
         </button>
         <button className="min-w-0 flex-1 text-left" onClick={() => (task.checklist.length ? setOpen(!open) : onEdit?.(task))}>
           <div className="flex items-center gap-2">
-            <span title={prioName[task.priority]} className={`h-1.5 w-1.5 shrink-0 rounded-full ${prio[task.priority]}`} />
             <p className={`truncate text-[15.5px] font-medium ${done ? 'text-faint line-through' : ''}`}>{task.title}</p>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-3.5 text-xs text-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             {task.repeat !== 'none' && <span className="inline-flex items-center gap-1"><Repeat size={12} />{repeatLabel[task.repeat]}</span>}
-            {task.repeat === 'none' && task.dueDate && (
+            {task.repeat === 'none' && task.dueDate && task.dueDate !== today && (
               <span className={`inline-flex items-center gap-1 ${overdue ? 'font-semibold text-crimson' : ''}`}>
-                {overdue ? <AlertCircle size={12} /> : <Calendar size={12} />}{overdue ? `Overdue · ${friendlyDate(task.dueDate)}` : friendlyDate(task.dueDate)}
+                {overdue ? <AlertCircle size={12} /> : <Calendar size={12} />}{overdue ? (task.priority === 3 ? `From ${friendlyDate(task.dueDate)}` : `Overdue · ${friendlyDate(task.dueDate)}`) : friendlyDate(task.dueDate)}
               </span>
             )}
             {task.time && <span className="inline-flex items-center gap-1"><Clock size={12} />{task.time}</span>}
-            {task.area && <span className={`font-medium ${areaStyle[task.area].text}`}>{task.area}</span>}
+            {late && <span className="font-semibold text-crimson">Past {rag.by}</span>}
+            {carried && !done && <span className="inline-flex items-center gap-1"><CornerDownRight size={12} />Carried forward</span>}
+            {goalName && <span className="inline-flex min-w-0 items-center gap-1 text-gold"><Target size={12} className="shrink-0" /><span className="truncate">{goalName}</span></span>}
             {task.checklist.length > 0 && <span className="inline-flex items-center gap-1"><ListTodo size={12} />{checklistDone}/{task.checklist.length}<ChevronDown size={12} className={open ? 'rotate-180' : ''} /></span>}
           </div>
         </button>
@@ -55,10 +60,20 @@ export default function TaskItem({ task, onEdit, today }: { task: Task; onEdit?:
             <Flame size={13} />{s}
           </div>
         )}
+        <button onClick={() => setMoving(!moving)} aria-label={`Change priority of "${task.title}" (now ${rag.name})`} aria-expanded={moving}
+          className={`flex h-10 shrink-0 items-center rounded-lg px-2 text-2xs font-semibold uppercase tracking-[0.08em] ${rag.text}`}>{rag.name}</button>
         {onEdit && (
           <button onClick={() => onEdit(task)} aria-label={`Edit "${task.title}"`} className="flex h-10 w-9 shrink-0 items-center justify-center text-faint"><MoreHorizontal size={18} /></button>
         )}
       </div>
+      {moving && (
+        <div className="flex items-center gap-2 border-t border-line px-3 py-2">
+          <span className="text-xs text-muted">Move to</span>
+          {([1, 2, 3] as const).map((p) => (
+            <button key={p} onClick={() => moveTo(p)} className={`chip ${p === task.priority ? 'chip-on' : ''}`}><span className={`h-2 w-2 rounded-full ${RAG[p].dot}`} />{RAG[p].name}</button>
+          ))}
+        </div>
+      )}
       <AnimatePresence>
         {open && task.checklist.length > 0 && (
           <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">

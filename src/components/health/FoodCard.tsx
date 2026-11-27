@@ -18,7 +18,7 @@ export default function FoodCard({ s, today, openAdd, setOpenAdd }: { s: Setting
       <div className="flex items-end justify-between">
         <div>
           <p className="eyebrow flex items-center gap-1.5"><Flame size={13} />Calories</p>
-          <p className="num mt-1 font-serif text-[26px] font-semibold leading-none">{total.toLocaleString()}<span className="ml-1 font-sans text-sm font-medium text-muted">of {s.calorieTarget.toLocaleString()} kcal</span></p>
+          <p className="num mt-1 font-display text-[26px] font-medium leading-none">{total.toLocaleString()}<span className="ml-1 font-sans text-sm font-medium text-muted">of {s.calorieTarget.toLocaleString()} kcal</span></p>
         </div>
         <p className={`num text-sm font-semibold ${over ? 'text-crimson' : 'text-forest'}`}>{over ? `${(total - s.calorieTarget).toLocaleString()} over` : `${(s.calorieTarget - total).toLocaleString()} left`}</p>
       </div>

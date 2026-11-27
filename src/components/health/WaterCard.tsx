@@ -27,14 +27,14 @@ export default function WaterCard({ s, today }: { s: Settings; today: string }) 
         </Ring>
         <div className="flex-1">
           <p className="eyebrow">Water</p>
-          <p className="num mt-1 font-serif text-[26px] font-semibold leading-none">{(total / 1000).toFixed(2)}<span className="ml-1 font-sans text-sm font-medium text-muted">of {(s.waterTargetMl / 1000).toFixed(1)} L</span></p>
+          <p className="num mt-1 font-display text-[26px] font-medium leading-none">{(total / 1000).toFixed(2)}<span className="ml-1 font-sans text-sm font-medium text-muted">of {(s.waterTargetMl / 1000).toFixed(1)} L</span></p>
           <p className="mt-1 text-xs text-muted">{total >= s.waterTargetMl ? 'Target reached' : `${Math.ceil((s.waterTargetMl - total) / 250)} glasses to go`}</p>
         </div>
         {entries.length > 0 && <button onClick={undo} aria-label="Undo last water entry" className="flex h-10 w-10 items-center justify-center rounded-full text-faint"><Undo2 size={18} /></button>}
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[250, 500, 1000].map((ml) => (
-          <button key={ml} onClick={() => addWater(today, ml, s.waterTargetMl)} className="btn border border-water/30 bg-water-soft text-water">
+          <button key={ml} onClick={() => addWater(today, ml, s.waterTargetMl)} className="btn whitespace-nowrap px-2 bg-water-soft text-water">
             + {ml >= 1000 ? `${ml / 1000} L` : `${ml} ml`}
           </button>
         ))}
