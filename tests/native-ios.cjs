@@ -58,8 +58,8 @@ const check = (name, ok, info = '') => { results.push({ name, ok: !!ok }); conso
   await tap('[aria-label="Close"]'); await wait(400)
 
   // Add a task with a time later today
-  await tap('nav >> text=Tasks'); await wait()
-  await tap('[aria-label="Add task"]'); await wait()
+  await tap('nav >> text=To-do'); await wait()
+  await tap('button:has-text("More options")'); await wait()
   await page.fill('#task-title', 'Pay credit card bill'); await page.fill('#task-date', '2026-11-25'); await page.fill('#task-time', '10:00')
   await tap('[role=dialog] button:text-is("Add task")'); await wait(600)
 
@@ -89,14 +89,15 @@ const check = (name, ok, info = '') => { results.push({ name, ok: !!ok }); conso
   await tap('[aria-label="Close"]'); await wait(400)
 
   // Marking the bill done removes its reminder
-  await tap('nav >> text=Tasks'); await wait()
+  await tap('nav >> text=To-do'); await wait()
   await tap('[aria-label^="Mark \\"Pay credit card bill\\" done"]'); await wait(2500)
   st = await mock()
   check('Finished task reminder is taken off iOS', !st.pending.some((n) => n.title === 'Pay credit card bill' && n.schedule.at.startsWith('2026-11-25')))
 
   // Focus: iOS rings at the end
   await tap('nav >> text=Today'); await wait()
-  await tap('button:has-text("min session")'); await wait(700)
+  await tap('[aria-label="Settings"]'); await wait()
+  await tap('[role=dialog] button:has-text("Focus mode")'); await wait(700)
   await tap('[role=dialog] button:has-text("Start 25 minute focus")'); await wait(1000)
   st = await mock()
   const alarm = st.pending.find((n) => n.id === 77)
@@ -130,7 +131,8 @@ const check = (name, ok, info = '') => { results.push({ name, ok: !!ok }); conso
   await tap('[aria-label="Close"]'); await wait(400)
 
   // Documents tab opens
-  await tap('nav >> text=Docs'); await wait(800)
+  await tap('[aria-label="Settings"]'); await wait()
+  await tap('[role=dialog] button:has-text("Documents")'); await wait(800)
   check('Docs tab opens', /documents|stored/.test(await text()))
   await shot('04-docs')
 

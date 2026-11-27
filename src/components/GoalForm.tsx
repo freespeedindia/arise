@@ -1,9 +1,10 @@
 import { Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Sheet from './Sheet'
-import { db, uid, type Area, type CheckItem, type Goal, type GoalLink } from '../lib/db'
+import { db, uid, type Area, type CheckItem, type Goal, type GoalLink, type GoalStatus } from '../lib/db'
 import { addDays, todayKey } from '../lib/dates'
-import { AREAS, areaStyle } from '../lib/goals'
+import { AREA_LABEL, AREAS, areaStyle } from '../lib/goals'
+import { STATUS_LABEL } from '../lib/day'
 import { syncLinkedGoals } from '../lib/health'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { moneyLinkedValue } from '../lib/money'
@@ -18,17 +19,22 @@ const HEALTH_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
 ]
 const WEALTH_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
   { id: '', label: 'Manual' },
-  { id: 'netWorth', label: 'Net worth', unit: '₹' },
-  { id: 'portfolio', label: 'Total investments', unit: '₹' },
-  { id: 'savings', label: 'Money saved', unit: '₹' },
-  { id: 'holding', label: 'One investment', unit: '₹' },
+  { id: 'savings', label: 'Money saved (in minus out)', unit: '₹' },
 ]
+/** Short term: by the end of next month. Long term: a year out. */
+const defaultDeadline = (t: 'short' | 'long') => {
+  const d = new Date()
+  if (t === 'short') return todayKeyOf(new Date(d.getFullYear(), d.getMonth() + 2, 0))
+  return addDays(todayKey(), 365)
+}
+const todayKeyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const FOCUS_LINKS: { id: GoalLink | ''; label: string; unit?: string }[] = [
   { id: '', label: 'Manual' },
   { id: 'focusHours', label: 'Focus hours', unit: 'hours' },
 ]
 
-export default function GoalForm({ open, onClose, goal }: { open: boolean; onClose: () => void; goal?: Goal | null }) {
+export default function GoalForm({ open, onClose, goal, term: initialTerm = 'short' }: { open: boolean; onClose: () => void; goal?: Goal | null; term?: 'short' | 'long' }) {
+  const [status, setStatus] = useState<GoalStatus | ''>('')
   const [title, setTitle] = useState('')
   const [area, setArea] = useState<Area>('Health')
   const [term, setTerm] = useState<'short' | 'long'>('short')
@@ -39,9 +45,9 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
   const [linkId, setLinkId] = useState<number | undefined>()
   const holdings = useLiveQuery(() => db.holdings.toArray()) ?? []
   const liabilities = useLiveQuery(() => db.liabilities.toArray()) ?? []
-  const LINKS = area === 'Wealth' ? WEALTH_LINKS : area === 'Health' ? HEALTH_LINKS : FOCUS_LINKS
+  const LINKS = area === 'Wealth' ? (goal?.link && !WEALTH_LINKS.some((l) => l.id === goal.link) ? [...WEALTH_LINKS, { id: goal.link, label: 'Linked value (older)', unit: '₹' }] : WEALTH_LINKS) : area === 'Health' ? HEALTH_LINKS : FOCUS_LINKS
   const canLink = true
-  const [deadline, setDeadline] = useState(addDays(todayKey(), 90))
+  const [deadline, setDeadline] = useState(defaultDeadline('short'))
   const [milestones, setMilestones] = useState<CheckItem[]>([])
   const [newMs, setNewMs] = useState('')
 
@@ -49,18 +55,19 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
     if (!open) return
     setTitle(goal?.title ?? '')
     setArea(goal?.area ?? 'Health')
-    setTerm(goal?.term ?? 'short')
+    setTerm(goal?.term ?? initialTerm)
+    setStatus(goal?.status ?? '')
     setTarget(goal?.target != null ? String(goal.target) : '')
     setStart(goal?.start != null ? String(goal.start) : '')
     setUnit(goal?.unit ?? '')
     setLink(goal?.link ?? '')
     setLinkId(goal?.linkId)
-    setDeadline(goal?.deadline ?? addDays(todayKey(), 90))
+    setDeadline(goal?.deadline ?? defaultDeadline(goal?.term ?? initialTerm))
     setMilestones(goal?.milestones ?? [])
     setNewMs('')
-  }, [open, goal])
+  }, [open, goal, initialTerm])
 
-  const pickTerm = (t: 'short' | 'long') => { setTerm(t); if (!goal) setDeadline(addDays(todayKey(), t === 'short' ? 90 : 365)) }
+  const pickTerm = (t: 'short' | 'long') => { setTerm(t); if (!goal) setDeadline(defaultDeadline(t)) }
   const moneyStart = (l: GoalLink, id?: number) => {
     // Progress is measured from where you stand today
     const v = moneyLinkedValue({ link: l, linkId: id, startDate: todayKey() } as Goal, holdings, liabilities, [])
@@ -85,7 +92,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
     const ms = newMs.trim() ? [...milestones, { id: uid(), text: newMs.trim(), done: false }] : milestones
     const hasTarget = target !== ''
     const data = {
-      title: title.trim(), area, term, deadline, milestones: ms,
+      title: title.trim(), area, term, deadline, milestones: ms, status: status || undefined,
       target: hasTarget ? Number(target) : undefined,
       start: hasTarget ? Number(start || 0) : undefined,
       unit: unit.trim() || undefined,
@@ -111,7 +118,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
             {AREAS.map((a) => (
               <button key={a} onClick={() => pickArea(a)}
                 className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-sm font-semibold ${area === a ? `${areaStyle[a].border} ${areaStyle[a].soft} ${areaStyle[a].text}` : 'border-line text-muted'}`}>
-                <AreaIcon area={a} size={18} />{a}
+                <AreaIcon area={a} size={18} />{AREA_LABEL[a]}
               </button>
             ))}
           </div>
@@ -123,6 +130,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
               <button key={t} onClick={() => pickTerm(t)} className={`seg-item ${term === t ? 'seg-item-on' : ''}`}>{t === 'short' ? 'Short term' : 'Long term'}</button>
             ))}
           </div>
+          <p className="mt-1.5 text-xs text-muted">{term === 'short' ? 'This month or next.' : 'Six months or more.'}</p>
         </div>
         {canLink && (
           <div>
@@ -139,7 +147,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
                 </select>
               ) : <p className="mt-1.5 text-xs text-crimson">Add an investment in Money first.</p>
             )}
-            {link && <p className="mt-1.5 text-xs text-muted">Updates automatically from what you log in {area === 'Wealth' ? 'Money' : area === 'Health' ? 'Health' : 'Focus mode'}.{link === 'savings' ? ' Counts income minus expenses from the day the goal starts.' : ''}</p>}
+            {link && <p className="mt-1.5 text-xs text-muted">Updates automatically from what you log in {area === 'Wealth' ? 'Expenses' : area === 'Health' ? 'Health' : 'Focus mode'}.{link === 'savings' ? ' Counts income minus expenses from the day the goal starts.' : ''}</p>}
           </div>
         )}
         <div>
@@ -149,7 +157,7 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
             <input className="input num" inputMode="decimal" placeholder="Target" aria-label="Target value" value={target} onChange={(e) => setTarget(e.target.value)} />
             <input className="input" placeholder="Unit" aria-label="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
           </div>
-          <p className="mt-1.5 text-xs text-muted">Start and target, e.g. 80 → 72 kg or 0 → 500000 ₹. Leave empty to track by milestones.</p>
+          <p className="mt-1.5 text-xs text-muted">Start and target, such as 80 → 76 kg or 0 → 50000 ₹. Leave empty to track by milestones.</p>
         </div>
         <div>
           <label className="label" htmlFor="goal-deadline">Deadline</label>
@@ -169,6 +177,14 @@ export default function GoalForm({ open, onClose, goal }: { open: boolean; onClo
               <button onClick={addMs} aria-label="Add milestone" className="btn-secondary px-4"><Plus size={18} /></button>
             </div>
           </div>
+        </div>
+        <div>
+          <label className="label" htmlFor="goal-status">Status</label>
+          <select id="goal-status" className="input" value={status} onChange={(e) => setStatus(e.target.value as GoalStatus | '')}>
+            <option value="">Automatic, from progress and daily actions</option>
+            {(['not-started', 'in-progress', 'on-track', 'at-risk'] as const).map((k) => <option key={k} value={k}>{STATUS_LABEL[k]}</option>)}
+          </select>
+          <p className="mt-1.5 text-xs text-muted">To complete a goal, open it and tap Mark as completed.</p>
         </div>
         <button onClick={save} disabled={!title.trim()} className="btn-primary w-full">{goal ? 'Save changes' : 'Create goal'}</button>
       </div>

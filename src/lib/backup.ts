@@ -1,10 +1,10 @@
 import { db } from './db'
 import { todayKey } from './dates'
 
-const TABLES = ['tasks', 'goals', 'settings', 'weights', 'water', 'food', 'activities', 'supplements', 'doses', 'reminders', 'transactions', 'holdings', 'liabilities', 'netWorth', 'reviews', 'focus', 'docs', 'docFiles'] as const
+const TABLES = ['tasks', 'goals', 'settings', 'weights', 'water', 'food', 'activities', 'supplements', 'doses', 'reminders', 'transactions', 'holdings', 'liabilities', 'netWorth', 'reviews', 'focus', 'docs', 'docFiles', 'healthDays', 'wishes'] as const
 
 export async function exportData() {
-  const out: Record<string, unknown> = { app: 'arise', version: 4, exportedAt: new Date().toISOString() }
+  const out: Record<string, unknown> = { app: 'arise', version: 5, exportedAt: new Date().toISOString() }
   for (const t of TABLES) out[t] = await db.table(t).toArray()
   // Files are binary: store them as text so they fit in the backup file
   out.docFiles = (out.docFiles as { data: ArrayBuffer }[]).map((f) => ({ ...f, data: toB64(f.data) }))

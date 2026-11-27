@@ -10,13 +10,9 @@ home screen, and from then on it opens like a normal app, works offline, and nee
 
 All your data is stored **only on your phone** (in the browser's private storage). Nothing is sent anywhere.
 
-| Today | Money | Focus | Monthly review | Export |
-|---|---|---|---|---|
-| ![Today](docs/screenshots/07-today.png) | ![Money](docs/screenshots/15-money.png) | ![Focus](docs/screenshots/19-focus-running.png) | ![Review](docs/screenshots/21-review-month.png) | ![Export](docs/screenshots/22-export.png) |
-
-| Documents | Health | Goals | Reminders | PDF report |
-|---|---|---|---|---|
-| ![Documents](docs/screenshots/26-documents.png) | ![Health](docs/screenshots/03-health-top.png) | ![Goals](docs/screenshots/06-goals.png) | ![Reminders](docs/screenshots/09-reminders.png) | ![PDF](docs/screenshots/pdf-report-page1.png) |
+| My day | Goals | Health | Expenses | To-do | Daily review |
+|---|---|---|---|---|---|
+| ![My day](docs/screenshots/my-day.png) | ![Goals](docs/screenshots/goals.png) | ![Health](docs/screenshots/health.png) | ![Expenses](docs/screenshots/expenses.png) | ![To-do](docs/screenshots/todo.png) | ![Daily review](docs/screenshots/daily-review.png) |
 
 ---
 
@@ -42,19 +38,19 @@ The `ios/` folder is Arise as a native iPhone app. In this version, reminders ar
 
 ---
 
-## What's inside (version 0.4)
+## What's inside (version 0.7)
 
-- **Today** — the single next action, daily summary, one-tap logging (water, food, weight, activity, expense), focus and review shortcuts, next reminder, alerts (low stock, goals behind pace, spending over a limit), focus goal, today's tasks and a thought from Swami Vivekananda.
-- **Tasks** — one-off, daily, weekly and monthly tasks with priority, due date, reminder time, checklists and streaks.
-- **Goals** — short and long-term goals in Health, Wealth, Mind and Work, with targets that go up or down, milestones and on-pace tracking. Goals can update themselves: Health from weight, runs or workouts; Wealth from net worth, total investments, money saved or one investment; Mind and Work from focus hours.
-- **Health** — weight plan with chart, BMI, calories, water, activity log with pace, supplements with dose ticks and low-stock warnings.
-- **Money** — net worth with a trend line, income and expenses by month, savings rate, a monthly spending limit and limits per category, assets and investments with gain or loss and allocation, loans and EMIs. Categories, asset types, budgets and currency are all yours to edit in Money, Setup.
-- **Focus mode** — a full-screen timer (15 to 60 minutes, optional break) tied to a task, a short "before you start" list (Do Not Disturb, social media closed), and a log of focus time. The timer keeps running if you leave the app.
-- **Reviews** — evening review (energy, what went well, what to improve, tomorrow's top three, which become tasks), weekly and monthly reviews with every module's numbers.
-- **Export and share** — the complete plan as a PDF report or an Excel workbook (one sheet per area), shared through the phone's share sheet to email, WhatsApp, Drive or any app. Made on the phone; nothing is uploaded.
-- **Documents** — Aadhaar, PAN, passport, visa, driving licence, vehicle RC, every kind of insurance, certificates and any other PDF or photo. Each has its number, holder, issuer, issue and expiry dates; reminders start 15 to 90 days before expiry and expired items show on Today. PDFs open inside the app page by page; share or save any file. Optional 4-digit PIN lock. Files never leave the phone.
-- **Reminders** — water through waking hours, run days, supplement doses, timed tasks, evening review, weekly review and your own reminders.
-- **Backup** — save and restore a backup file from Settings.
+Arise is a daily operating system: Goals are the brain, and Health, Expenses and the To-do list are the arms that carry them out. Everything is meant to be updated in about five minutes each morning.
+
+- **My day (dashboard)** — a date selector to plan tomorrow or look back, and a daily alignment card: Moving forward, On track or Drifting, with Health %, money spent, tasks done and goals moved. Below it, the four areas, both meal plans, money in and out for the month, and Red, Amber and Green progress. Every number comes from what you recorded; an empty day is not judged.
+- **Goals** — short term (this month or next) and long term (six months or more), with target, deadline, progress and milestones. Status is Not started, In progress, On track, At risk or Completed, worked out from real progress or set by you. Each goal shows whether today moved it forward: linked to-dos, milestones, following the meal plan (Health goals) or staying within budget (Money goals).
+- **Health** — tabs for Devi and Me. A simple meal plan (breakfast, lunch, evening snacks, dinner) as plain words, copied between Devi and Me or to the next day, ticked when followed. Exercise or play in minutes, an editable daily routine, supplements per person, optional water and weight. A daily "stayed on track" indicator.
+- **Expenses** — IN and OUT tabs in rupees, Need or Want on every expense, editable categories, a want list that turns into an expense when bought, a monthly budget with spent, remaining, % used, needs and wants, a category chart, and a visible carry-forward when a month goes over.
+- **To-do** — Red (critical, before noon), Amber (before 5 PM) and Green (flexible). Quick add, tick, move between colours, carry unfinished Green to tomorrow, link to a goal, completed and upcoming views. Phone nudges at 11:30 and 16:30 if Red or Amber items are open.
+- **Reviews** — the daily review answers four questions from your data (health routine, spending discipline, critical tasks, a step towards a goal). Weekly and monthly overviews show days forward or drifting, health average, meals followed, Red task completion, needs, wants, overspending and missed critical tasks.
+- **Also kept** — Documents with expiry reminders and PIN lock, Focus mode, reminders, PDF and Excel export, and backup. Documents and Focus open from Settings.
+
+Older investment, net worth, loan and calorie entries are kept safely in the backup file but no longer shown.
 
 Design: matte saffron, gold, cream, deep red and green; Inter and Source Serif; line icons; light and dark mode.
 
@@ -68,6 +64,7 @@ Design: matte saffron, gold, cream, deep red and green; Inter and Source Serif; 
 | 2 (done) | Health, runs, supplements, phone reminders, professional redesign |
 | 3 (done) | Money, investments, net worth, Wealth goals |
 | 4 (done) | Reviews, focus mode, PDF and Excel export |
+| 0.7 (done) | Refined into a daily operating system: goals linked to health, expenses and Red/Amber/Green to-dos |
 
 ---
 

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import BottomNav, { type Tab } from './components/BottomNav'
 import Toast from './components/Toast'
-import { useSettings } from './lib/settings'
+import { migrateSettings, useSettings } from './lib/settings'
 import { useToday } from './lib/useToday'
 import { useSchedule } from './lib/useSchedule'
 import { useNotifier } from './lib/notifier'
@@ -40,6 +40,10 @@ export default function App() {
   const focus = useFocus(settings?.breakMinutes ?? 5)
   const [focusOpen, setFocusOpen] = useState(false)
   const [review, setReview] = useState<{ open: boolean; kind: 'daily' | 'weekly' | 'monthly' }>({ open: false, kind: 'daily' })
+  // The day you are looking at: plan tomorrow or review earlier days
+  const [viewDate, setViewDate] = useState(today)
+  useEffect(() => { setViewDate(today) }, [today])
+  useEffect(() => { migrateSettings() }, [])
 
   useEffect(() => {
     const onHash = () => setTab(readHash())
@@ -75,12 +79,12 @@ export default function App() {
   return (
     <div className="mx-auto min-h-full max-w-lg pb-28">
       <motion.main key={`${tab}-${today}-${healthAction ?? ''}${moneyAction ?? ''}`} initial={{ y: 6 }} animate={{ y: 0 }} transition={{ duration: 0.18 }}>
-        {tab === 'today' && <Today s={settings} today={today} schedule={schedule ?? []} onNavigate={go} onOpenSettings={() => setSettingsOpen(true)} onOpenReminders={() => setRemindersOpen(true)} onOpenFocus={() => setFocusOpen(true)} onOpenReview={(kind) => setReview({ open: true, kind })} focus={focus} />}
-        {tab === 'tasks' && <Tasks today={today} />}
-        {tab === 'goals' && <Goals />}
-        {tab === 'health' && <Health s={settings} today={today} initial={healthAction} />}
+        {tab === 'today' && <Today s={settings} today={today} date={viewDate} setDate={setViewDate} schedule={schedule ?? []} onNavigate={go} onOpenSettings={() => setSettingsOpen(true)} onOpenReminders={() => setRemindersOpen(true)} onOpenFocus={() => setFocusOpen(true)} onOpenReview={(kind) => setReview({ open: true, kind })} focus={focus} />}
+        {tab === 'tasks' && <Tasks today={today} date={viewDate} setDate={setViewDate} />}
+        {tab === 'goals' && <Goals s={settings} today={today} />}
+        {tab === 'health' && <Health s={settings} today={today} date={viewDate} setDate={setViewDate} initial={healthAction} />}
         {tab === 'docs' && <Documents s={settings} today={today} />}
-        {tab === 'money' && <Money s={settings} today={today} initial={moneyAction} onOpenGoals={() => go('goals')} />}
+        {tab === 'money' && <Money s={settings} today={today} date={viewDate} initial={moneyAction} />}
       </motion.main>
       {focus.state && tab !== 'today' && (
         <button onClick={() => setFocusOpen(true)} className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-4 z-30 inline-flex items-center gap-2 rounded-full bg-hero px-4 py-2.5 text-sm font-semibold text-[#F7F2E9] shadow-card">
@@ -89,9 +93,9 @@ export default function App() {
       )}
       <BottomNav tab={tab} onChange={(t) => go(t)} />
       <FocusScreen open={focusOpen} onClose={() => setFocusOpen(false)} s={settings} today={today} focus={focus} />
-      <ReviewSheet open={review.open} onClose={() => setReview({ ...review, open: false })} s={settings} today={today} kind={review.kind} />
+      <ReviewSheet open={review.open} onClose={() => setReview({ ...review, open: false })} s={settings} today={today} date={viewDate} kind={review.kind} />
       <ExportSheet today={today} />
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onOpenDocs={() => { setSettingsOpen(false); go('docs') }} onOpenFocus={() => { setSettingsOpen(false); setFocusOpen(true) }} />
       <RemindersSheet open={remindersOpen} onClose={() => setRemindersOpen(false)} s={settings} schedule={schedule ?? []} today={today} />
       <Toast />
     </div>

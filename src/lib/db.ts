@@ -4,7 +4,7 @@ export type Area = 'Health' | 'Wealth' | 'Mind' | 'Work'
 export type Repeat = 'none' | 'daily' | 'weekly' | 'monthly'
 export type Priority = 1 | 2 | 3 // 1 = high
 
-export interface CheckItem { id: string; text: string; done: boolean }
+export interface CheckItem { id: string; text: string; done: boolean; /** day it was ticked */ doneOn?: string }
 
 export interface Task {
   id?: number
@@ -21,6 +21,8 @@ export interface Task {
   /** Dates (YYYY-MM-DD) on which a repeating task was ticked */
   completions: string[]
   doneAt?: string
+  /** Optional link to the goal this task moves forward */
+  goalId?: number
   createdAt: string
 }
 
@@ -44,9 +46,13 @@ export interface Goal {
   deadline: string
   milestones: CheckItem[]
   focus: boolean
+  /** Status you set yourself. When empty, Arise works it out from your progress. */
+  status?: GoalStatus
   completedAt?: string
   createdAt: string
 }
+
+export type GoalStatus = 'not-started' | 'in-progress' | 'on-track' | 'at-risk' | 'completed'
 
 export interface Setting { key: string; value: unknown }
 
@@ -55,7 +61,8 @@ export interface WaterEntry { id?: number; date: string; ml: number; at: string 
 export interface FoodEntry { id?: number; date: string; name: string; kcal: number; meal: Meal; at: string }
 export type Meal = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'
 export type ActivityType = 'Run' | 'Walk' | 'Cycle' | 'Gym' | 'Yoga' | 'Swim' | 'Sport' | 'Other'
-export interface Activity { id?: number; date: string; type: ActivityType; minutes: number; km?: number; notes?: string }
+export type Person = 'me' | 'devi'
+export interface Activity { id?: number; person?: Person; date: string; type: ActivityType; minutes: number; km?: number; notes?: string }
 export interface Supplement {
   id?: number
   name: string
@@ -64,6 +71,8 @@ export interface Supplement {
   perDose: number // units used per dose
   stock: number // units left
   active: boolean
+  /** Whose supplement: you (default) or Devi */
+  person?: Person
   createdAt: string
 }
 export interface DoseLog { id?: number; suppId: number; date: string; time: string; takenAt: string }
@@ -79,7 +88,23 @@ export interface Reminder {
 }
 
 export type TxType = 'expense' | 'income'
-export interface Transaction { id?: number; date: string; type: TxType; amount: number; category: string; note?: string; createdAt: string }
+export type NeedWant = 'need' | 'want'
+/** note holds the description (money out) or the source (money in). */
+export interface Transaction { id?: number; date: string; type: TxType; amount: number; category: string; note?: string; need?: NeedWant; wishId?: number; createdAt: string }
+/** Something you want to buy later. It becomes an expense when you buy it. */
+export interface Wish { id?: number; title: string; amount?: number; category?: string; addedAt: string; boughtAt?: string; txId?: number }
+
+export type MealSlot = 'breakfast' | 'lunch' | 'snacks' | 'dinner'
+export const MEAL_SLOTS: MealSlot[] = ['breakfast', 'lunch', 'snacks', 'dinner']
+/** One person's day: the meal plan, whether it was followed, and the routine ticks. */
+export interface HealthDay {
+  person: Person
+  date: string
+  meals: Partial<Record<MealSlot, string>>
+  followed: Partial<Record<MealSlot, boolean>>
+  routine: string[] // routine items ticked that day
+  notes?: string
+}
 export interface Holding {
   id?: number
   name: string
@@ -142,6 +167,8 @@ class AriseDB extends Dexie {
   focus!: Table<FocusSession, number>
   docs!: Table<DocRecord, number>
   docFiles!: Table<DocFile, number>
+  healthDays!: Table<HealthDay, [Person, string]>
+  wishes!: Table<Wish, number>
   constructor() {
     super('arise')
     this.version(1).stores({
@@ -169,6 +196,10 @@ class AriseDB extends Dexie {
     this.version(4).stores({
       docs: '++id, kind, expiresOn',
       docFiles: '++id, docId',
+    })
+    this.version(5).stores({
+      healthDays: '[person+date], date',
+      wishes: '++id, boughtAt',
     })
   }
 }

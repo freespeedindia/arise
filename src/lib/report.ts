@@ -1,4 +1,4 @@
-import { db, type Activity, type DoseLog, type FocusSession, type FoodEntry, type Goal, type Holding, type Liability, type NetWorthPoint, type Review, type DocRecord, type Supplement, type Task, type Transaction, type WaterEntry, type WeightEntry } from './db'
+import { db, type Activity, type DoseLog, type FocusSession, type FoodEntry, type Goal, type HealthDay, type Wish, type Holding, type Liability, type NetWorthPoint, type Review, type DocRecord, type Supplement, type Task, type Transaction, type WaterEntry, type WeightEntry } from './db'
 import { addDays, daysBetween, monthKey, todayKey } from './dates'
 import { totals } from './money'
 
@@ -6,14 +6,16 @@ export interface AllData {
   tasks: Task[]; goals: Goal[]; weights: WeightEntry[]; water: WaterEntry[]; food: FoodEntry[]; activities: Activity[]
   supplements: Supplement[]; doses: DoseLog[]; transactions: Transaction[]; holdings: Holding[]; liabilities: Liability[]
   netWorth: NetWorthPoint[]; reviews: Review[]; focus: FocusSession[]; docs: DocRecord[]
+  healthDays: HealthDay[]; wishes: Wish[]
 }
 export async function loadAll(): Promise<AllData> {
-  const [tasks, goals, weights, water, food, activities, supplements, doses, transactions, holdings, liabilities, netWorth, reviews, focus, docs] = await Promise.all([
+  const [tasks, goals, weights, water, food, activities, supplements, doses, transactions, holdings, liabilities, netWorth, reviews, focus, docs, healthDays, wishes] = await Promise.all([
     db.tasks.toArray(), db.goals.toArray(), db.weights.orderBy('date').toArray(), db.water.toArray(), db.food.toArray(), db.activities.toArray(),
     db.supplements.toArray(), db.doses.toArray(), db.transactions.toArray(), db.holdings.toArray(), db.liabilities.toArray(),
     db.netWorth.orderBy('date').toArray(), db.reviews.toArray(), db.focus.toArray(), db.docs.toArray(),
+    db.healthDays.toArray(), db.wishes.toArray(),
   ])
-  return { tasks, goals, weights, water, food, activities, supplements, doses, transactions, holdings, liabilities, netWorth, reviews, focus, docs }
+  return { tasks, goals, weights, water, food, activities, supplements, doses, transactions, holdings, liabilities, netWorth, reviews, focus, docs, healthDays, wishes }
 }
 
 const inRange = (d: string, from: string, to: string) => d >= from && d <= to

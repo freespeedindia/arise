@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Check, Pill, Plus, X } from 'lucide-react'
 import Sheet from '../Sheet'
-import { db, type Supplement } from '../../lib/db'
+import { db, type Person, type Supplement } from '../../lib/db'
 import { daysOfStock, LOW_STOCK_DAYS } from '../../lib/health'
 import { celebrate } from '../../lib/celebrate'
 
@@ -18,11 +18,11 @@ export async function toggleDose(s: Supplement, date: string, time: string) {
   }
 }
 
-export default function SupplementsCard({ today }: { today: string }) {
+export default function SupplementsCard({ today, person = 'me' }: { today: string; person?: Person }) {
   const sups = useLiveQuery(() => db.supplements.toArray()) ?? []
   const doses = useLiveQuery(() => db.doses.where('date').equals(today).toArray(), [today]) ?? []
   const [edit, setEdit] = useState<Supplement | null | 'new'>(null)
-  const active = sups.filter((s) => s.active)
+  const active = sups.filter((s) => s.active && (s.person ?? 'me') === person)
   const slots = active.flatMap((s) => s.times.map((t) => ({ s, t }))).sort((a, b) => a.t.localeCompare(b.t))
   const taken = slots.filter(({ s, t }) => doses.some((d) => d.suppId === s.id && d.time === t)).length
   const low = active.filter((s) => daysOfStock(s) <= LOW_STOCK_DAYS)
@@ -54,14 +54,14 @@ export default function SupplementsCard({ today }: { today: string }) {
           )
         })}
       </div>
-      {slots.length === 0 && <p className="mt-2 text-sm text-muted">Add your supplements and tablets to get reminders and stock alerts.</p>}
+      {slots.length === 0 && <p className="mt-2 text-sm text-muted">Add supplements or tablets to get reminders and stock alerts.</p>}
       <button onClick={() => setEdit('new')} className="btn-secondary mt-3 w-full"><Plus size={16} />Add supplement</button>
-      <EditSupplement value={edit} onClose={() => setEdit(null)} />
+      <EditSupplement value={edit} onClose={() => setEdit(null)} person={person} />
     </div>
   )
 }
 
-function EditSupplement({ value, onClose }: { value: Supplement | null | 'new'; onClose: () => void }) {
+function EditSupplement({ value, onClose, person }: { value: Supplement | null | 'new'; onClose: () => void; person: Person }) {
   const s = value && value !== 'new' ? value : null
   const [name, setName] = useState('')
   const [dose, setDose] = useState('')
@@ -78,7 +78,7 @@ function EditSupplement({ value, onClose }: { value: Supplement | null | 'new'; 
     if (!name.trim() || !times.length) return
     const data = { name: name.trim(), dose: dose.trim() || '1 tablet', times: [...new Set(times)].sort(), stock: Number(stock) || 0, perDose: Number(perDose) || 1 }
     if (s?.id) await db.supplements.update(s.id, data)
-    else await db.supplements.add({ ...data, active: true, createdAt: new Date().toISOString() })
+    else await db.supplements.add({ ...data, active: true, person, createdAt: new Date().toISOString() })
     onClose()
   }
   const remove = async () => {

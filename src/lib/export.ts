@@ -4,9 +4,11 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import writeXlsxFile from 'write-excel-file'
 import { addDays, fromKey, todayKey } from './dates'
-import { goalPace, goalPercent, paceLabel } from './goals'
+import { AREA_LABEL, goalPercent } from './goals'
+import { MEAL_LABEL, monthBudget, periodPattern, RAG, STATUS_LABEL, goalStatus } from './day'
+import { MEAL_SLOTS } from './db'
 import { daysOfStock, latestWeight, plannedWeight } from './health'
-import { gainPct, money, totals } from './money'
+import { money } from './money'
 import { loadAll, periodSummary, type AllData } from './report'
 import { readSettings, type Settings } from './settings'
 import { isDoneNow, isDueToday, repeatLabel, streak } from './tasks'
@@ -125,61 +127,71 @@ function buildPdf(data: AllData, s: Settings, r: ExportRange): Blob {
   }
 
   // 1. Snapshot
-  const t = totals(data.holdings, data.liabilities)
   const lw = latestWeight(data.weights)
+  const pat = periodPattern(data, s, r.from, r.to, today)
+  const mb = monthBudget(data.transactions, s, r.to.slice(0, 7))
   const active = data.goals.filter((g) => !g.completedAt)
   const avg = active.length ? Math.round(active.reduce((a, g) => a + goalPercent(g), 0) / active.length) : 0
   heading('Snapshot')
   const snap: [string, string][] = [
-    ['Net worth', f(t.net)], ['Assets / owed', `${f(t.assets, true)} / ${f(t.debt, true)}`],
+    ['Days moving forward', `${pat.forward} of ${pat.n}`], ['Days drifting', `${pat.drifting} of ${pat.n}`],
     ['Active goals', `${active.length} · ${avg}% average progress`], ['Tasks completed', String(sum.tasksDone)],
     ['Weight', lw ? `${lw.kg.toFixed(1)} kg${s.targetWeight ? ` (target ${s.targetWeight} kg)` : ''}` : 'Not logged'],
     ['Workouts', `${sum.workouts} · ${sum.activeMin} min${sum.runKm ? ` · ${sum.runKm} km run` : ''}`],
-    ['Income / spent', `${f(sum.income, true)} / ${f(sum.spent, true)}`], ['Saved', `${f(sum.saved, true)}${sum.income ? ` (${sum.rate}%)` : ''}`],
-    ['Focus time', `${Math.floor(sum.focusMin / 60)}h ${sum.focusMin % 60}m`], ['Water per day', `${sum.waterAvgL.toFixed(1)} L of ${(s.waterTargetMl / 1000).toFixed(1)} L`],
+    ['Money in / out', `${f(sum.income, true)} / ${f(sum.spent, true)}`], ['Needs / wants', `${f(pat.needs, true)} / ${f(pat.wants, true)}`],
+    ['Health average', pat.healthAvg != null ? `${pat.healthAvg}%` : 'No data'], ['Red tasks done', pat.red.total ? `${pat.red.done} of ${pat.red.total}` : 'None planned'],
   ]
   const half = Math.ceil(snap.length / 2)
   table(['Measure', 'Value', 'Measure', 'Value'], Array.from({ length: half }, (_, i) => [snap[i][0], snap[i][1], snap[i + half]?.[0] ?? '', snap[i + half]?.[1] ?? '']), { widths: [82, 170, 82] })
 
   // 2. Goals
   heading('Goals')
-  const goalRows = ['Health', 'Wealth', 'Mind', 'Work'].flatMap((a) => data.goals.filter((g) => g.area === a && !g.completedAt).map((g) => [
-    g.area, g.title + (g.term === 'long' ? ' (long term)' : ''),
+  const goalRows = ['Health', 'Wealth', 'Work', 'Mind'].flatMap((a) => data.goals.filter((g) => g.area === a && !g.completedAt).map((g) => [
+    AREA_LABEL[g.area], g.title + (g.term === 'long' ? ' (long term)' : ''),
     g.target != null ? (g.unit === '₹' ? `${f(g.current ?? 0, true)} of ${f(g.target, true)}` : `${g.current ?? 0} of ${g.target} ${g.unit ?? ''}`) : `${g.milestones.filter((m) => m.done).length}/${g.milestones.length} milestones`,
-    `${goalPercent(g)}%`, paceLabel[goalPace(g)], d(g.deadline),
+    `${goalPercent(g)}%`, STATUS_LABEL[goalStatus(g, data.tasks, today)], d(g.deadline),
   ]))
-  table(['Area', 'Goal', 'Progress', '%', 'Pace', 'Deadline'], goalRows, { widths: [50, 150, 110, 36, 70], right: [3] })
+  table(['Area', 'Goal', 'Progress', '%', 'Status', 'Deadline'], goalRows, { widths: [50, 150, 110, 36, 70], right: [3] })
   const achieved = data.goals.filter((g) => g.completedAt)
-  if (achieved.length) table(['Achieved goals', 'Area', 'Completed'], achieved.map((g) => [g.title, g.area, d(g.completedAt)]))
+  if (achieved.length) table(['Completed goals', 'Area', 'Completed'], achieved.map((g) => [g.title, AREA_LABEL[g.area], d(g.completedAt)]))
 
   // 3. Tasks and habits
-  heading('Tasks and habits')
+  heading('To-do')
   const habits = data.tasks.filter((k) => k.repeat !== 'none')
   table(['Habit', 'Repeats', 'Time', 'Streak', 'Done this period'], habits.map((k) => [k.title, repeatLabel[k.repeat], k.time ?? '', String(streak(k, today)), String(k.completions.filter((c) => c >= r.from && c <= r.to).length)]), { right: [3, 4] })
   const openTasks = data.tasks.filter((k) => k.repeat === 'none' && !k.doneAt).sort((a, b) => (a.dueDate ?? '9').localeCompare(b.dueDate ?? '9'))
-  table(['Open task', 'Priority', 'Due', 'Status'], openTasks.slice(0, 40).map((k) => [k.title, ['High', 'Medium', 'Low'][k.priority - 1], k.dueDate ? d(k.dueDate) : 'Someday', isDueToday(k, today) && !isDoneNow(k, today) ? (k.dueDate! < today ? 'Overdue' : 'Today') : '']), { widths: [230] })
+  table(['Open task', 'Priority', 'Due', 'Status'], openTasks.slice(0, 40).map((k) => [k.title, RAG[k.priority].name, k.dueDate ? d(k.dueDate) : 'Someday', isDueToday(k, today) && !isDoneNow(k, today) ? (k.dueDate! < today ? 'Overdue' : 'Today') : '']), { widths: [230] })
 
   // 4. Health
   heading('Health')
   const plan = plannedWeight(s, today)
   table(['Plan', 'Value'], [
     ['Weight plan', s.startWeight && s.targetWeight && s.planEnd ? `${s.startWeight} kg to ${s.targetWeight} kg by ${d(s.planEnd)}${plan ? ` (plan today ${plan.toFixed(1)} kg)` : ''}` : 'Not set'],
-    ['Daily targets', `${s.calorieTarget} kcal · ${(s.waterTargetMl / 1000).toFixed(1)} L water`],
-    ['Average this period', `${sum.kcalAvg || '-'} kcal · ${sum.waterAvgL} L water`],
+    ['Meals as planned', pat.mealsPlanned ? `${pat.mealsFollowed} of ${pat.mealsPlanned}` : 'No meal plans'],
+    ['Exercise', `${pat.exDays} of ${pat.n} days · ${sum.activeMin} min`],
     ['Weight this period', sum.weightStart != null ? `${sum.weightStart.toFixed(1)} to ${sum.weightEnd!.toFixed(1)} kg` : 'No entries'],
     ['Supplements taken', sum.adherence != null ? `${sum.adherence}% of scheduled doses` : 'None scheduled'],
   ], { widths: [130] })
   const sup = data.supplements.filter((x) => x.active)
   if (sup.length) table(['Supplement', 'Dose', 'Times', 'Stock left'], sup.map((x) => [x.name, x.dose, x.times.join(', '), `${x.stock} (${daysOfStock(x)} days)`]))
+  const plans = data.healthDays.filter((h) => h.date >= r.from && h.date <= r.to && Object.values(h.meals).some((x) => x?.trim())).sort((a, b) => a.date.localeCompare(b.date) || a.person.localeCompare(b.person)).slice(-28)
+  if (plans.length) table(['Date', 'Who', 'Breakfast', 'Lunch', 'Evening snacks', 'Dinner'], plans.map((h) => [d(h.date), h.person === 'me' ? 'Me' : s.childName || 'Devi', ...MEAL_SLOTS.map((m) => `${h.meals[m] ?? ''}${h.followed[m] ? ' (done)' : ''}`)]), { widths: [52, 40] })
   const recentW = data.weights.filter((w) => w.date >= r.from && w.date <= r.to).slice(-12)
   if (recentW.length) table(['Date', 'Weight (kg)'], recentW.map((w) => [d(w.date), w.kg.toFixed(1)]), { widths: [130], right: [1] })
 
   // 5. Money
-  heading('Money')
+  heading('Expenses')
+  table(['Budget', 'Value'], [
+    ['Monthly budget', mb.budget ? f(mb.budget) : 'Not set'],
+    ['Spent this month', `${f(mb.spent)}${mb.budget ? ` (${mb.pct}%)` : ''}`],
+    ['Needs / wants', `${f(mb.needs)} / ${f(mb.wants)}`],
+    ...(mb.over ? [['Overspent', `${f(mb.over)} · reduce next month's wants by this much`]] : []),
+    ...(mb.carry ? [['Carry-forward from last month', f(mb.carry)]] : []),
+  ], { widths: [150] })
   const cats = Object.entries(sum.byCat).sort((a, b) => b[1] - a[1])
   table(['Spending by category', 'Spent', 'Monthly limit'], cats.map(([c, v]) => [c, f(v), s.budgets[c] ? f(s.budgets[c]) : '']), { right: [1, 2] })
-  table(['Asset', 'Type', 'Put in', 'Value', 'Gain'], [...data.holdings].sort((a, b) => b.current - a.current).map((h) => [h.name, h.kind, f(h.invested), f(h.current), h.invested ? `${gainPct(h).toFixed(1)}%` : '']), { right: [2, 3, 4] })
-  if (data.liabilities.length) table(['Loan', 'Type', 'Owed', 'EMI'], data.liabilities.map((l) => [l.name, l.kind, f(l.outstanding), l.emi ? f(l.emi) : '']), { right: [2, 3] })
+  const wl = data.wishes.filter((w) => !w.boughtAt)
+  if (wl.length) table(['Want list', 'Expected price', 'Added'], wl.map((w) => [w.title, w.amount ? f(w.amount) : '', d(w.addedAt.slice(0, 10))]), { right: [1] })
 
   // Documents (details only; files stay on the phone)
   if (data.docs.length) {
@@ -232,8 +244,8 @@ const AMT = '#,##0'
 
 async function buildXlsx(data: AllData, s: Settings, r: ExportRange): Promise<Blob> {
   const sum = periodSummary(data, r.from, r.to)
-  const t = totals(data.holdings, data.liabilities)
   const today = todayKey()
+  const mb = monthBudget(data.transactions, s, r.to.slice(0, 7))
   const sheets: { name: string; rows: Cell[][]; widths: number[] }[] = []
   const add = (name: string, rows: Cell[][], widths: number[]) => sheets.push({ name, rows, widths })
 
@@ -243,32 +255,30 @@ async function buildXlsx(data: AllData, s: Settings, r: ExportRange): Promise<Bl
     [S('Prepared'), S(today)],
     [],
     H('Measure', 'Value'),
-    [S('Net worth'), N(t.net, AMT)], [S('Assets'), N(t.assets, AMT)], [S('Owed'), N(t.debt, AMT)],
-    [S('Income in period'), N(sum.income, AMT)], [S('Spent in period'), N(sum.spent, AMT)], [S('Saved in period'), N(sum.saved, AMT)], [S('Savings rate %'), N(sum.rate)],
+    [S('Money in, period'), N(sum.income, AMT)], [S('Money out, period'), N(sum.spent, AMT)], [S('Monthly budget'), N(mb.budget || null, AMT)],
+    [S('Needs this month'), N(mb.needs, AMT)], [S('Wants this month'), N(mb.wants, AMT)], [S('Over budget by'), N(mb.over || null, AMT)], [S('Carry-forward from last month'), N(mb.carry || null, AMT)],
     [S('Tasks completed'), N(sum.tasksDone)], [S('Workouts'), N(sum.workouts)], [S('Active minutes'), N(sum.activeMin)], [S('Run km'), N(sum.runKm)],
-    [S('Focus minutes'), N(sum.focusMin)], [S('Water per day (L)'), N(sum.waterAvgL)], [S('Calories per day'), N(sum.kcalAvg)],
+    [S('Focus minutes'), N(sum.focusMin)], [S('Water per day (L)'), N(sum.waterAvgL)],
     [S('Supplement adherence %'), N(sum.adherence)], [S('Latest weight (kg)'), N(latestWeight(data.weights)?.kg)], [S('Target weight (kg)'), N(s.targetWeight)],
   ], [28, 22])
-  add('Goals', [H('Area', 'Goal', 'Term', 'Start', 'Current', 'Target', 'Unit', 'Progress %', 'Pace', 'Start date', 'Deadline', 'Completed', 'Milestones'),
-    ...data.goals.map((g) => [S(g.area), S(g.title), S(g.term), N(g.start), N(g.current), N(g.target), S(g.unit), N(goalPercent(g)), S(paceLabel[goalPace(g)]), S(g.startDate), S(g.deadline), S(g.completedAt), S(g.milestones.map((m) => `${m.done ? '[x]' : '[ ]'} ${m.text}`).join('; '))])],
+  add('Goals', [H('Area', 'Goal', 'Term', 'Start', 'Current', 'Target', 'Unit', 'Progress %', 'Status', 'Start date', 'Deadline', 'Completed', 'Milestones'),
+    ...data.goals.map((g) => [S(AREA_LABEL[g.area]), S(g.title), S(g.term), N(g.start), N(g.current), N(g.target), S(g.unit), N(goalPercent(g)), S(STATUS_LABEL[goalStatus(g, data.tasks, today)]), S(g.startDate), S(g.deadline), S(g.completedAt), S(g.milestones.map((m) => `${m.done ? '[x]' : '[ ]'} ${m.text}`).join('; '))])],
     [10, 34, 8, 10, 10, 10, 8, 11, 12, 12, 12, 12, 40])
-  add('Tasks', [H('Task', 'Priority', 'Area', 'Repeats', 'Due / starts', 'Time', 'Done on', 'Times completed', 'Streak', 'Notes'),
-    ...data.tasks.map((k) => [S(k.title), S(['High', 'Medium', 'Low'][k.priority - 1]), S(k.area), S(repeatLabel[k.repeat]), S(k.dueDate), S(k.time), S(k.doneAt), N(k.completions.length), N(streak(k, today)), S(k.notes)])],
+  add('To-do', [H('Task', 'Priority', 'Goal', 'Repeats', 'Due / starts', 'Time', 'Done on', 'Times completed', 'Streak', 'Notes'),
+    ...data.tasks.map((k) => [S(k.title), S(RAG[k.priority].name), S(data.goals.find((g) => g.id === k.goalId)?.title), S(repeatLabel[k.repeat]), S(k.dueDate), S(k.time), S(k.doneAt), N(k.completions.length), N(streak(k, today)), S(k.notes)])],
     [34, 9, 9, 12, 12, 7, 12, 10, 8, 30])
-  add('Money', [H('Date', 'Type', 'Category', 'Amount', 'Note'),
-    ...[...data.transactions].sort((a, b) => b.date.localeCompare(a.date)).map((x) => [S(x.date), S(x.type === 'income' ? 'Income' : 'Expense'), S(x.category), N(x.amount, AMT), S(x.note)])],
-    [12, 10, 22, 14, 30])
+  add('Expenses', [H('Date', 'In / out', 'Category', 'Need / want', 'Amount', 'Description or source'),
+    ...[...data.transactions].sort((a, b) => b.date.localeCompare(a.date)).map((x) => [S(x.date), S(x.type === 'income' ? 'In' : 'Out'), S(x.category), S(x.type === 'expense' ? (mb.isWant(x) ? 'Want' : 'Need') : ''), N(x.amount, AMT), S(x.note)])],
+    [12, 8, 24, 11, 14, 30])
+  add('Want list', [H('Item', 'Price', 'Added', 'Bought on'), ...data.wishes.map((w) => [S(w.title), N(w.amount, AMT), S(w.addedAt.slice(0, 10)), S(w.boughtAt)])], [30, 12, 12, 12])
+  add('Meal plans', [H('Date', 'Who', 'Breakfast', 'Lunch', 'Evening snacks', 'Dinner', 'Followed', 'Routine done'),
+    ...[...data.healthDays].sort((a, b) => b.date.localeCompare(a.date)).map((h) => [S(h.date), S(h.person === 'me' ? 'Me' : s.childName || 'Devi'), ...MEAL_SLOTS.map((m) => S(h.meals[m])), S(MEAL_SLOTS.filter((m) => h.followed[m]).map((m) => MEAL_LABEL[m]).join(', ')), S(h.routine.join('; '))])],
+    [12, 8, 22, 22, 22, 22, 26, 30])
   add('Budgets', [H('Category', 'Monthly limit', 'Spent in period'),
     ...s.expenseCategories.map((c) => [S(c), N(s.budgets[c] || null, AMT), N(sum.byCat[c] || 0, AMT)]),
     [S('Total limit'), N(s.monthlyBudget || null, AMT), N(sum.spent, AMT)]], [24, 14, 16])
-  add('Investments', [H('Name', 'Type', 'Put in', 'Value today', 'Gain', 'Gain %', 'Matures', 'Updated', 'Notes'),
-    ...data.holdings.map((h) => [S(h.name), S(h.kind), N(h.invested, AMT), N(h.current, AMT), N(h.current - h.invested, AMT), N(+gainPct(h).toFixed(2)), S(h.maturity), S(h.updatedAt.slice(0, 10)), S(h.notes)])],
-    [26, 16, 13, 13, 12, 8, 12, 12, 24])
-  add('Loans', [H('Name', 'Type', 'Owed', 'EMI'), ...data.liabilities.map((l) => [S(l.name), S(l.kind), N(l.outstanding, AMT), N(l.emi, AMT)])], [26, 16, 14, 12])
-  add('Net worth', [H('Date', 'Assets', 'Owed', 'Net worth'), ...data.netWorth.map((p) => [S(p.date), N(p.assets, AMT), N(p.liabilities, AMT), N(p.net, AMT)])], [12, 14, 14, 14])
   add('Weight', [H('Date', 'Weight (kg)', 'Plan (kg)'), ...data.weights.map((w) => [S(w.date), N(w.kg), N(plannedWeight(s, w.date) != null ? +plannedWeight(s, w.date)!.toFixed(2) : null)])], [12, 12, 12])
-  add('Activity', [H('Date', 'Type', 'Minutes', 'Km', 'Notes'), ...[...data.activities].sort((a, b) => b.date.localeCompare(a.date)).map((a) => [S(a.date), S(a.type), N(a.minutes), N(a.km), S(a.notes)])], [12, 10, 9, 8, 30])
-  add('Food', [H('Date', 'Meal', 'Item', 'kcal'), ...[...data.food].sort((a, b) => b.date.localeCompare(a.date)).map((x) => [S(x.date), S(x.meal), S(x.name), N(x.kcal)])], [12, 11, 28, 8])
+  add('Activity', [H('Date', 'Who', 'Type', 'Minutes', 'Km', 'Notes'), ...[...data.activities].sort((a, b) => b.date.localeCompare(a.date)).map((a) => [S(a.date), S(a.person === 'devi' ? s.childName || 'Devi' : 'Me'), S(a.type), N(a.minutes), N(a.km), S(a.notes)])], [12, 8, 10, 9, 8, 30])
   const waterByDay: Record<string, number> = {}
   data.water.forEach((w) => (waterByDay[w.date] = (waterByDay[w.date] || 0) + w.ml))
   add('Water', [H('Date', 'ml'), ...Object.entries(waterByDay).sort((a, b) => b[0].localeCompare(a[0])).map(([k, v]) => [S(k), N(v)])], [12, 10])

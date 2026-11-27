@@ -1,13 +1,12 @@
-import { FolderLock, HeartPulse, ListChecks, Sun, Target, Wallet } from 'lucide-react'
+import { HeartPulse, LayoutGrid, ListChecks, Target, Wallet } from 'lucide-react'
 
 export type Tab = 'today' | 'tasks' | 'goals' | 'health' | 'money' | 'docs'
 const TABS = [
-  { id: 'today', label: 'Today', Icon: Sun },
-  { id: 'tasks', label: 'Tasks', Icon: ListChecks },
+  { id: 'today', label: 'Today', Icon: LayoutGrid },
   { id: 'goals', label: 'Goals', Icon: Target },
   { id: 'health', label: 'Health', Icon: HeartPulse },
-  { id: 'money', label: 'Money', Icon: Wallet },
-  { id: 'docs', label: 'Docs', Icon: FolderLock },
+  { id: 'money', label: 'Expenses', Icon: Wallet },
+  { id: 'tasks', label: 'To-do', Icon: ListChecks },
 ] as const
 
 export default function BottomNav({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {

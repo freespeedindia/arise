@@ -1,17 +1,19 @@
 import { Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Sheet from './Sheet'
-import { db, uid, type Area, type CheckItem, type Priority, type Repeat, type Task } from '../lib/db'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, uid, type CheckItem, type Priority, type Repeat, type Task } from '../lib/db'
 import { todayKey } from '../lib/dates'
-import { AREAS, areaStyle } from '../lib/goals'
+import { RAG } from '../lib/day'
 
-export default function TaskForm({ open, onClose, task }: { open: boolean; onClose: () => void; task?: Task | null }) {
+export default function TaskForm({ open, onClose, task, date }: { open: boolean; onClose: () => void; task?: Task | null; date?: string }) {
   const [title, setTitle] = useState('')
   const [priority, setPriority] = useState<Priority>(2)
   const [repeat, setRepeat] = useState<Repeat>('none')
   const [dueDate, setDueDate] = useState(todayKey())
   const [time, setTime] = useState('')
-  const [area, setArea] = useState<Area | undefined>()
+  const [goalId, setGoalId] = useState<number | undefined>()
+  const goals = (useLiveQuery(() => db.goals.toArray()) ?? []).filter((g) => !g.completedAt || g.id === task?.goalId)
   const [checklist, setChecklist] = useState<CheckItem[]>([])
   const [newItem, setNewItem] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -21,13 +23,13 @@ export default function TaskForm({ open, onClose, task }: { open: boolean; onClo
     setTitle(task?.title ?? '')
     setPriority(task?.priority ?? 2)
     setRepeat(task?.repeat ?? 'none')
-    setDueDate(task ? task.dueDate ?? '' : todayKey())
+    setDueDate(task ? task.dueDate ?? '' : date ?? todayKey())
     setTime(task?.time ?? '')
-    setArea(task?.area)
+    setGoalId(task?.goalId)
     setChecklist(task?.checklist ?? [])
     setNewItem('')
     setConfirmDelete(false)
-  }, [open, task])
+  }, [open, task, date])
 
   const addItem = () => {
     if (!newItem.trim()) return
@@ -37,7 +39,7 @@ export default function TaskForm({ open, onClose, task }: { open: boolean; onClo
   const save = async () => {
     if (!title.trim()) return
     const items = newItem.trim() ? [...checklist, { id: uid(), text: newItem.trim(), done: false }] : checklist
-    const data = { title: title.trim(), priority, repeat, dueDate: dueDate || (repeat !== 'none' ? todayKey() : undefined), time: time || undefined, area, checklist: items }
+    const data = { title: title.trim(), priority, repeat, dueDate: dueDate || (repeat !== 'none' ? todayKey() : undefined), time: time || undefined, goalId, checklist: items }
     if (task?.id != null) await db.tasks.update(task.id, data)
     else await db.tasks.add({ ...data, completions: [], createdAt: new Date().toISOString() })
     onClose()
@@ -58,9 +60,13 @@ export default function TaskForm({ open, onClose, task }: { open: boolean; onClo
         </div>
         <div>
           <span className="label">Priority</span>
-          <div className="seg grid-cols-3">
-            {([[1, 'High'], [2, 'Medium'], [3, 'Low']] as const).map(([p, l]) => (
-              <button key={p} onClick={() => setPriority(p)} className={`seg-item ${priority === p ? 'seg-item-on' : ''}`}>{l}</button>
+          <div className="grid grid-cols-3 gap-2">
+            {([1, 2, 3] as const).map((p) => (
+              <button key={p} onClick={() => setPriority(p)} aria-pressed={priority === p}
+                className={`flex min-h-[56px] flex-col items-center justify-center rounded-2xl px-1 text-center ${priority === p ? `${RAG[p].soft} ${RAG[p].text}` : 'bg-sunken text-muted'}`}>
+                <span className="flex items-center gap-1.5 text-sm font-semibold"><span className={`h-2 w-2 rounded-full ${RAG[p].dot}`} />{RAG[p].name}</span>
+                <span className="text-2xs leading-tight">{RAG[p].sub}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -88,13 +94,11 @@ export default function TaskForm({ open, onClose, task }: { open: boolean; onClo
           </p>
         )}
         <div>
-          <span className="label">Area</span>
-          <div className="grid grid-cols-4 gap-2">
-            {AREAS.map((a) => (
-              <button key={a} onClick={() => setArea(area === a ? undefined : a)}
-                className={`rounded-xl border py-2.5 text-sm font-semibold ${area === a ? `${areaStyle[a].border} ${areaStyle[a].soft} ${areaStyle[a].text}` : 'border-line text-muted'}`}>{a}</button>
-            ))}
-          </div>
+          <label className="label" htmlFor="task-goal">Moves this goal forward (optional)</label>
+          <select id="task-goal" className="input" value={goalId ?? ''} onChange={(e) => setGoalId(e.target.value ? Number(e.target.value) : undefined)}>
+            <option value="">No goal</option>
+            {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
+          </select>
         </div>
         <div>
           <span className="label">Checklist</span>

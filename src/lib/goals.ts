@@ -31,7 +31,9 @@ export const paceLabel: Record<Pace, string> = {
 }
 export const daysLeft = (g: Goal) => daysBetween(todayKey(), g.deadline)
 
-export const AREAS: Area[] = ['Health', 'Wealth', 'Mind', 'Work']
+export const AREAS: Area[] = ['Health', 'Wealth', 'Work', 'Mind']
+/** Names shown on screen. Stored values stay the same so older data keeps working. */
+export const AREA_LABEL: Record<Area, string> = { Health: 'Health', Wealth: 'Money', Work: 'Work', Mind: 'Personal' }
 /** Area colours: Health green, Wealth gold, Mind saffron, Work deep red */
 export const areaStyle: Record<Area, { text: string; bg: string; soft: string; border: string; color: string }> = {
   Health: { text: 'text-forest', bg: 'bg-forest', soft: 'bg-forest-soft', border: 'border-forest', color: 'rgb(var(--forest))' },
